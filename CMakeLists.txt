@@ -17,6 +17,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     endif()
 endif()
 
+cmake_policy(SET CMP0167 OLD)
+# find_package(Boost REQUIRED COMPONENTS system thread)
+find_package(Boost 1.70 REQUIRED)
+# target_link_libraries(Moccer Boost::Boost)
+include_directories(${Boost_INCLUDE_DIRS})
+
 # Protobuf settings
 set(protobuf_MODULE_COMPATIBLE TRUE)
 find_package(Protobuf 3.21.12 REQUIRED)

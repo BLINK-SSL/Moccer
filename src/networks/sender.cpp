@@ -30,59 +30,23 @@ void Sender::send() {
     commands.set_timestamp(1234567890);
     commands.set_isteamyellow(false);
     
-    // ロボットコマンドを追加
-    auto* command = commands.add_robot_commands();
-    command->set_id(0);
-    command->set_kickspeedx(1.0);
-    command->set_kickspeedz(1.0);
-    command->set_veltangent(1.0);
-    command->set_velnormal(1.0);
-    command->set_velangular(1.0);
-    command->set_spinner(true);
-    command->set_wheelsspeed(0.0);
-    // command->set_wheel1(0.0);
-    // command->set_wheel2(0.0);
-    // command->set_wheel3(0.0);
-    // command->set_wheel4(0.0);
+    for (int i = 0; i < 16; i++) {
+        auto* command = commands.add_robot_commands();
+        command->set_id(i);
+        command->set_kickspeedx(1.0);
+        command->set_kickspeedz(1.0);
+        command->set_veltangent(1.0);
+        command->set_velnormal(1.0);
+        command->set_velangular(1.0);
+        command->set_spinner(true);
+        command->set_wheelsspeed(0.0);
+        // command->set_wheel1(0.0);
+        // command->set_wheel2(0.0);
+        // command->set_wheel3(0.0);
+        // command->set_wheel4(0.0);
+    }
     
-    // auto* command2 = commands.add_robot_commands();
-    // command2->set_id(1);
-    // command2->set_kickspeedx(1.0);
-    // command2->set_kickspeedz(1.0);
-    // command2->set_veltangent(1.0);
-    // command2->set_velnormal(1.0);
-    // command2->set_velangular(1.0);
-    // command2->set_spinner(true);
-    // command2->set_wheel1(0.0);
-    // command2->set_wheel2(0.0);
-    // command2->set_wheel3(0.0);
-    // command2->set_wheel4(0.0);
-
     packet.mutable_commands()->CopyFrom(commands);
-
-    // packet.set_allocated_robot_commands(&commands);
-    // #include <iostream>
-
-    // std::cout << "Robot commands size: " << commands.robot_commands_size() << std::endl;
-    // for (const auto& cmd : commands.robot_commands()) {
-    //     std::cout << "ID: " << cmd.id()
-    //               << " KickSpeedX: " << cmd.kickspeedx()
-    //               << " KickSpeedZ: " << cmd.kickspeedz() << std::endl;
-    // }
-    
-    
-// for (const auto& robot_command : packet.commands().robot_commands()) {
-//     qDebug() << "ID:" << robot_command.id()
-//              << "KickSpeedX:" << robot_command.kickspeedx()
-//              << "KickSpeedZ:" << robot_command.kickspeedz();
-// }
-
-    // Make sure all required fields are set
-    // command->set_wheelsspeed(1.0);  // Added missing required field
-
-    // commands.add_robot_commands()->CopyFrom(command);
-
-    // std::cout << "Commands: " << commands.DebugString() << std::endl;
 
     std::string serializedData;
     if (!packet.SerializeToString(&serializedData)) {
@@ -90,10 +54,10 @@ void Sender::send() {
         return;
     }
 
+    cout << "Sending packet with size: " << serializedData.size() << endl;
+
     // Send the serialized data using the UDP socket
     socket_.send_to(boost::asio::buffer(serializedData), endpoint_);
-
-    // std::cout << "Command sent at timestamp: " << commands.timestamp() << std::endl;
 }
 
 void Sender::runTimer() {

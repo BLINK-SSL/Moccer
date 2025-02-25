@@ -19,7 +19,7 @@ class Sender {
 public:
     Sender();
     ~Sender();
-    void send();
+    void send(bool is_yellow);
 
 private:
     void runTimer();
@@ -30,6 +30,8 @@ private:
     boost::asio::io_context ioContext_;
     boost::asio::ip::udp::socket socket_;
     boost::asio::ip::udp::endpoint endpoint_;
+
+    float angle;
 };
 
 #endif // SENDER_H

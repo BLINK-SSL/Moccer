@@ -38,16 +38,16 @@ set(PROTOBUF_GENERATE_DIR ${PROTOBUF_DIR}/pb_gen)
 file(MAKE_DIRECTORY ${PROTOBUF_GENERATE_DIR})
 
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
-# set(MODEL_DIR ${SRC_DIR}/models)
+set(MODEL_DIR ${SRC_DIR}/models)
 set(NET_DIR ${SRC_DIR}/networks)
 
 # file(GLOB SOURCES ${SRC_DIR}/*.cpp)
-# file(GLOB MODEL_SOURCES ${MODEL_DIR}/*.cpp)
+file(GLOB MODEL_SOURCES ${MODEL_DIR}/*.cpp)
 file(GLOB NET_SOURCES ${NET_DIR}/*.cpp)
 
 # file(GLOB HEADERS ${SRC_DIR}/*.h)
 # file(GLOB MODEL_HEADERS ${MODEL_DIR}/*.h)
-file(GLOB NET_HEADERS ${NET_DIR}/*.h)
+# file(GLOB NET_HEADERS ${NET_DIR}/*.h)
 
 
 
@@ -66,6 +66,7 @@ protobuf_generate_cpp(
 # Source files
 set(SOURCES
     ${PROTO_SRCS}
+    ${MODEL_SOURCES}
     ${NET_SOURCES}
 )
 

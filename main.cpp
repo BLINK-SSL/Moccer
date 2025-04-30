@@ -1,11 +1,16 @@
 #include "src/networks/sender.h"
+#include "src/networks/receiver.h"
 #include <iostream>
 
 int main(int argc, char *argv[]) {
-    Sender sender;
-    std::cout << "Sender initialized and running at 60 FPS." << std::endl;
+    // Sender sender;
+    Receiver receiver;
+    receiver.start();
     while (true) {
-        // The program runs indefinitely to demonstrate the timer
+        for (int i = 0; i < 16; ++i) {
+            Robot* robots = receiver.getBlueRobots();
+            std::cout << "Blue Robot ID: " << i << ", X: " << robots[i].x << ", Y: " << robots[i].y << std::endl;
+        }
     }
-    return 0;
+    receiver.stop();
 }

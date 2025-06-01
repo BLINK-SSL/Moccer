@@ -22,11 +22,6 @@ public:
     void send(bool is_yellow);
 
 private:
-    void runTimer();
-    bool running_;
-    std::thread timerThread_;
-    
-    // Networking related members
     boost::asio::io_context ioContext_;
     boost::asio::ip::udp::socket socket_;
     boost::asio::ip::udp::endpoint endpoint_;

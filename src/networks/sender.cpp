@@ -9,18 +9,11 @@
 Sender::Sender() :
     ioContext_(),
     socket_(ioContext_),
-    endpoint_(boost::asio::ip::make_address("127.0.0.1"), 20694) {  // Use make_address here
-    running_ = true;
-    socket_.open(boost::asio::ip::udp::v4()); // Open the UDP socket
-    timerThread_ = std::thread(&Sender::runTimer, this);
+    endpoint_(boost::asio::ip::make_address("127.0.0.1"), 20694) {
+    socket_.open(boost::asio::ip::udp::v4());
 }
 
 Sender::~Sender() {
-    running_ = false;
-    if (timerThread_.joinable()) {
-        timerThread_.join();
-    }
-    socket_.close(); // Close the socket when done
 }
 
 void Sender::send(bool is_yellow) {
@@ -59,22 +52,4 @@ void Sender::send(bool is_yellow) {
 
     // Send the serialized data using the UDP socket
     socket_.send_to(boost::asio::buffer(serializedData), endpoint_);
-}
-
-void Sender::runTimer() {
-    const auto frameDuration = std::chrono::milliseconds(1000 / 60); // 60 FPS
-
-    while (running_) {
-        auto startTime = std::chrono::high_resolution_clock::now();
-
-        send(true);
-        send(false);
-
-        auto endTime = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-
-        if (elapsed < frameDuration) {
-            std::this_thread::sleep_for(frameDuration - elapsed);
-        }
-    }
 }

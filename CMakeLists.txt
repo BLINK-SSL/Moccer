@@ -17,9 +17,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     endif()
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    cmake_policy(SET CMP0167 OLD)
-endif()
+# if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+#     cmake_policy(SET CMP0167 OLD)
+# endif()
 # find_package(Boost REQUIRED COMPONENTS system thread)
 find_package(Boost 1.70 REQUIRED)
 # target_link_libraries(Moccer Boost::Boost)
@@ -41,7 +41,7 @@ set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(MODEL_DIR ${SRC_DIR}/models)
 set(NET_DIR ${SRC_DIR}/networks)
 
-# file(GLOB SOURCES ${SRC_DIR}/*.cpp)
+file(GLOB MAIN_SOURCES ${SRC_DIR}/*.cpp)
 file(GLOB MODEL_SOURCES ${MODEL_DIR}/*.cpp)
 file(GLOB NET_SOURCES ${NET_DIR}/*.cpp)
 
@@ -66,6 +66,7 @@ protobuf_generate_cpp(
 # Source files
 set(SOURCES
     ${PROTO_SRCS}
+    ${MAIN_SOURCES}
     ${MODEL_SOURCES}
     ${NET_SOURCES}
 )

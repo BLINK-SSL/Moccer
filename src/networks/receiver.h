@@ -24,6 +24,11 @@ public:
     Robot* getBlueRobots();
     Robot* getYellowRobots();
 
+    double tCapture;
+    double tSent;
+    double tCapturePre;
+    double fps;
+
 private:
     void receiveLoop(); 
 

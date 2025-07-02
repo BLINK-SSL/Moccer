@@ -31,8 +31,8 @@ void Sender::send(bool is_yellow) {
         command->set_id(i);
         command->set_kickspeedx(0.0);
         command->set_kickspeedz(0.0);
-        command->set_veltangent(1);
-        command->set_velnormal(1);
+        command->set_veltangent(0.0);
+        command->set_velnormal(0.0);
         command->set_velangular(0);
         command->set_spinner(true);
         command->set_wheelsspeed(0.0);

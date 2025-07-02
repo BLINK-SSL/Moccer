@@ -5,7 +5,7 @@
 
 Receiver::Receiver()
     : socket_(ioContext_),
-      endpoint_(boost::asio::ip::make_address("127.0.0.1"), 10694),
+      endpoint_(boost::asio::ip::make_address("224.5.23.2"), 10694),
       running_(false) {
 
     socket_.open(boost::asio::ip::udp::v4());
@@ -47,6 +47,13 @@ void Receiver::receiveLoop() {
             SSL_WrapperPacket packet;
             if (packet.ParseFromArray(recvBuf, static_cast<int>(len))) {
                 SSL_DetectionFrame detection = packet.detection();
+                tCapture = detection.t_capture();
+                tSent = detection.t_sent();
+                if (detection.t_capture() - tCapturePre != 0) {
+                    fps = 1.0 / (detection.t_capture() - tCapturePre);
+                }
+                
+                tCapturePre = detection.t_capture();
                 {
                     std::lock_guard<std::mutex> lock(blueRobotMutex);
                     for (const auto& robot : detection.robots_blue()) {

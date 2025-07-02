@@ -10,11 +10,13 @@ int main(int argc, char *argv[]) {
     receiver.start();
     auto sendInterval = milliseconds(16);
     auto lastSendTime = steady_clock::now();
+    float angle = 0.0;
     while (true) {
-        for (int i = 0; i < 16; ++i) {
-            Robot* robots = receiver.getBlueRobots();
+        Robot* robots = receiver.getBlueRobots();
+        // std::cout << robots[0].orientation*180/3.14 << std::endl;
+        // for (int i = 0; i < 16; ++i) {
             // std::cout << "Blue Robot ID: " << i << ", X: " << robots[i].x << ", Y: " << robots[i].y << std::endl;
-        }
+        // }
         auto now = steady_clock::now();
         if (now - lastSendTime >= sendInterval) {
             sender.send(false);

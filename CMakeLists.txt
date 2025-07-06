@@ -10,6 +10,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         set(Protobuf_INCLUDE_DIR "/opt/homebrew/opt/protobuf@21/include")
         set(Protobuf_LIBRARIES "/opt/homebrew/opt/protobuf@21/lib/libprotobuf.dylib")
         include_directories("/opt/homebrew/opt/protobuf@21/include")
+        include_directories("/opt/homebrew/opt/eigen/include")
     else()
         set(Protobuf_INCLUDE_DIR "/usr/local/Cellar/protobuf@21/21.12_1/include")
         set(Protobuf_LIBRARIES "/usr/local/Cellar/protobuf@21/21.12_1/lib/libprotobuf.dylib")
@@ -44,12 +45,14 @@ set(NET_DIR ${SRC_DIR}/networks)
 file(GLOB MAIN_SOURCES ${SRC_DIR}/*.cpp)
 file(GLOB MODEL_SOURCES ${MODEL_DIR}/*.cpp)
 file(GLOB NET_SOURCES ${NET_DIR}/*.cpp)
+file(GLOB FINDER_SOURCES ${SRC_DIR}/finder/*.cpp)
 
 # file(GLOB HEADERS ${SRC_DIR}/*.h)
 # file(GLOB MODEL_HEADERS ${MODEL_DIR}/*.h)
 # file(GLOB NET_HEADERS ${NET_DIR}/*.h)
 
-
+find_package(Eigen3 REQUIRED)
+# target_link_libraries(Moccer Eigen3::Eigen)
 
 # Compile Protobuf files
 file(GLOB PROTO_FILES "${PROTOBUF_SOURCE_DIR}/*.proto")
@@ -69,6 +72,7 @@ set(SOURCES
     ${MAIN_SOURCES}
     ${MODEL_SOURCES}
     ${NET_SOURCES}
+    ${FINDER_SOURCES}
 )
 
 include_directories(${PROTOBUF_GENERATE_DIR})
@@ -79,6 +83,7 @@ add_executable(Moccer main.cpp ${SOURCES})
 # Link libraries
 target_link_libraries(Moccer
     ${Protobuf_LIBRARIES}
+    Eigen3::Eigen
 )
 
 # Set runtime directory

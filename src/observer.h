@@ -9,9 +9,17 @@
 class Observer {
     public:
         Observer();
-    private:
+        ~Observer();
+
+        void update();
         Sender sender;
         Receiver receiver;
+
+
+    private:
+        Robot* blueRobots;
+        Robot* yellowRobots;
+
 };
 
 #endif // OBSERVER_H

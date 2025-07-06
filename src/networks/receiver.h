@@ -29,6 +29,9 @@ public:
     double tCapturePre;
     double fps;
 
+    std::mutex blueRobotMutex;
+    std::mutex yellowRobotMutex;
+
 private:
     void receiveLoop(); 
 
@@ -41,7 +44,4 @@ private:
 
     Robot blueRobot[16];
     Robot yellowRobot[16];
-
-    std::mutex blueRobotMutex;
-    std::mutex yellowRobotMutex;
 };

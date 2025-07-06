@@ -1,0 +1,183 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.interpolate import make_interp_spline
+
+# --- パラメータ設定（スケール拡大）---
+start = np.array([-6000.0, -4500.0])
+target = np.array([6000.0, 4500.0])
+obstacles = [
+    {"center": np.array([5500, 4000]), "radius": 180},
+    {"center": np.array([3500, 1000]), "radius": 180},
+    {"center": np.array([0, 400]), "radius": 180},
+    {"center": np.array([4000, 2000]), "radius": 180},
+    {"center": np.array([3000, 4500]), "radius": 180},
+    {"center": np.array([4500, 2500]), "radius": 180}
+]
+
+# --- 衝突判定（線分と円） ---
+def check_collision(p1, p2, obs, radius_scale=1.0):
+    d = p2 - p1
+    f = p1 - obs["center"]
+    a = np.dot(d, d)
+    b = 2 * np.dot(f, d)
+    adjusted_radius = obs["radius"] * radius_scale
+    c = np.dot(f, f) - adjusted_radius ** 2
+    discriminant = b ** 2 - 4 * a * c
+    if discriminant < 0:
+        return False
+    sqrt_disc = np.sqrt(discriminant)
+    t1 = (-b - sqrt_disc) / (2 * a)
+    t2 = (-b + sqrt_disc) / (2 * a)
+    return (0 <= t1 <= 1) or (0 <= t2 <= 1)
+
+# --- 中間ターゲット生成 ---
+def generate_targets(start, target, num=60, offset=6000.0, seed=None, max_attempts=1000):
+    if seed is not None:
+        np.random.seed(seed)
+
+    vec = target - start
+    base = start + vec * 0.5
+    direction = vec / np.linalg.norm(vec)
+
+    targets = []
+    attempts = 0
+
+    while len(targets) < num and attempts < max_attempts:
+        angle = np.random.uniform(-np.pi, np.pi)
+        distance = np.random.uniform(0.5, 1.0) * offset
+
+        rot_matrix = np.array([
+            [np.cos(angle), -np.sin(angle)],
+            [np.sin(angle),  np.cos(angle)]
+        ])
+        offset_vec = rot_matrix @ direction * distance
+        pt = base + offset_vec
+
+        # --- 条件チェック ---
+        v1 = pt - start
+        v2 = target - pt
+        angle_between = np.arccos(np.clip(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)), -1.0, 1.0))
+
+        total_len = np.linalg.norm(v1) + np.linalg.norm(v2)
+        straight_len = np.linalg.norm(target - start)
+
+        if angle_between > np.radians(160):  # 20度未満の曲がりは除外
+            attempts += 1
+            continue
+        if total_len > straight_len * 1.5:  # 遠回りしすぎは除外
+            attempts += 1
+            continue
+
+        targets.append(pt)
+        attempts += 1
+
+    return targets
+
+# --- 経路計画 ---
+def plan_path(start, target, obstacles):
+    candidates = generate_targets(start, target)
+    candidates.append(target)  # 直進も候補に
+
+    def angle_from_goal(mid):
+        v_goal = target - start
+        v_mid = mid - start
+        cos_angle = np.dot(v_goal, v_mid) / (np.linalg.norm(v_goal) * np.linalg.norm(v_mid))
+        return np.arccos(np.clip(cos_angle, -1.0, 1.0))
+
+    candidates.sort(key=angle_from_goal)
+
+    for mid in candidates:
+        seg1_collide = any(check_collision(start, mid, o) for o in obstacles)
+        seg2_collide = any(check_collision(mid, target, o) for o in obstacles)
+        if not seg1_collide and not seg2_collide:
+            return mid, candidates
+    return None, candidates
+
+# --- スムーズ補間 ---
+def smooth_waypoints(start, mid, target):
+    waypoints = np.array([start, mid, target])
+    t = [0, 0.5, 1.0]
+    x_spline = make_interp_spline(t, waypoints[:, 0], k=2)
+    y_spline = make_interp_spline(t, waypoints[:, 1], k=2)
+
+    t_dense = np.linspace(0, 1, 200)
+    x_dense = x_spline(t_dense)
+    y_dense = y_spline(t_dense)
+    return np.column_stack([x_dense, y_dense])
+
+current_pos = start.copy()
+final_target = target.copy()
+
+# 最初に経路計画
+used_mid, _ = plan_path(current_pos, final_target, obstacles)
+if used_mid is None:
+    raise RuntimeError("初期経路が見つかりません")
+
+# スムーズ経路生成
+smooth_traj = smooth_waypoints(current_pos, used_mid, final_target)
+step_size = 10  # 1ステップの移動量（軌跡の点数）
+traj_index = 0
+
+path_points = [current_pos]
+
+max_steps = 100
+threshold = 200
+
+for step in range(max_steps):
+    # 現在の位置から再計画が必要かチェック
+    # （例: 現在位置から経路の次の区間が障害物と衝突しないか）
+    # 今回は単純に再計画条件を入れてみます。必要に応じて高度化可能。
+
+    # 次のステップの予定点
+    next_index = min(traj_index + step_size, len(smooth_traj)-1)
+    next_pos = smooth_traj[next_index]
+
+    collision = False
+    # 現在位置→次位置に障害物がないか確認
+    for obs in obstacles:
+        if check_collision(current_pos, next_pos, obs):
+            collision = True
+            break
+
+    if collision:
+        # 再計画
+        print(f"Step {step}: 衝突検出。再計画実施")
+        used_mid, _ = plan_path(current_pos, final_target, obstacles)
+        if used_mid is None:
+            print("再計画失敗。終了")
+            break
+        smooth_traj = smooth_waypoints(current_pos, used_mid, final_target)
+        traj_index = 0
+        next_index = min(step_size, len(smooth_traj)-1)
+        next_pos = smooth_traj[next_index]
+    else:
+        # 問題なければ次の点へ進む
+        traj_index = next_index
+
+    current_pos = next_pos
+    path_points.append(current_pos)
+
+    if np.linalg.norm(current_pos - final_target) < threshold:
+        print(f"Step {step}: 目標に到達")
+        break
+
+# 描画
+fig, ax = plt.subplots(figsize=(10, 8))
+ax.set_xlim(-6500, 6500)
+ax.set_ylim(-5000, 5000)
+ax.set_aspect('equal')
+ax.set_title('Incremental Path Following with Replanning')
+
+for obs in obstacles:
+    circle = plt.Circle(obs["center"], obs["radius"], color='gray', alpha=0.5)
+    ax.add_patch(circle)
+
+ax.plot(*final_target, 'ro', label='Target')
+
+path_points = np.array(path_points)
+ax.plot(path_points[:, 0], path_points[:, 1], 'b.-', label='Path')
+
+ax.plot(path_points[0, 0], path_points[0, 1], 'go', label='Start')
+ax.legend()
+ax.grid(True)
+plt.show()

@@ -26,7 +26,7 @@ struct Obstacle {
     double radius;
 };
 
-bool check_collision(const Vec2& p1, const Vec2& p2, const Obstacle& obs, double radius_scale = 1.5) {
+bool check_collision(const Vec2& p1, const Vec2& p2, const Obstacle& obs, double radius_scale = 1) {
     Vec2 d = p2 - p1;
     Vec2 f = p1 - obs.center;
 
@@ -44,7 +44,7 @@ bool check_collision(const Vec2& p1, const Vec2& p2, const Obstacle& obs, double
     return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1);
 }
 
-std::vector<Vec2> generate_targets(const Vec2& start, const Vec2& target, int num = 50, double offset = 6000.0, int max_attempts = 1000) {
+std::vector<Vec2> generate_targets(const Vec2& start, const Vec2& target, int num = 1000, double offset = 6000.0, int max_attempts = 1000) {
     std::vector<Vec2> targets;
     Vec2 vec = target - start;
     Vec2 base = start + vec * 0.5;
@@ -148,6 +148,9 @@ int main() {
         };
 
         // 前回のmidが有効か確認
+        // if (previous_mid.x != 0 || previous_mid.y != 0) {
+        //     mid_valid = true;
+        // }
         
         for (const auto& obs : obstacles) {
             if (check_collision(current_pos, previous_mid, obs) ||

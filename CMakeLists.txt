@@ -16,7 +16,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         set(Protobuf_LIBRARIES "/usr/local/Cellar/protobuf@21/21.12_1/lib/libprotobuf.dylib")
         include_directories("/usr/local/Cellar/protobuf@21/21.12_1/include")
     endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # Linux Protobuf path settings
+    set(Protobuf_INCLUDE_DIR "/usr/local/include")
+    set(Protobuf_LIBRARIES "/usr/local/lib/libprotobuf.a")
+    include_directories("/usr/local/include")
+else()
+    message(FATAL_ERROR "Unsupported platform: ${CMAKE_SYSTEM_NAME}")
 endif()
+
+find_package(Threads REQUIRED)
 
 # if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 #     cmake_policy(SET CMP0167 OLD)
@@ -84,6 +93,7 @@ add_executable(Moccer main.cpp ${SOURCES})
 target_link_libraries(Moccer
     ${Protobuf_LIBRARIES}
     Eigen3::Eigen
+    Threads::Threads
 )
 
 # Set runtime directory

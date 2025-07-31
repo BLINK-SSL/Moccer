@@ -5,13 +5,28 @@ from scipy.interpolate import make_interp_spline
 # --- パラメータ設定 ---
 start = np.array([-6000.0, -4500.0])
 target = np.array([6000.0, 4500.0])
+radius = 180
+seed = 44
 obstacles = [
-    {"center": np.array([5500, 4000]), "radius": 180},
-    {"center": np.array([3500, 1000]), "radius": 180},
-    {"center": np.array([0, 400]), "radius": 180},
-    {"center": np.array([4000, 2000]), "radius": 180},
-    {"center": np.array([3000, 4500]), "radius": 180},
-    {"center": np.array([4500, 2500]), "radius": 180}
+    {"center": np.array([5500, 4000]), "radius": radius},
+    {"center": np.array([3500, 1000]), "radius": radius},
+    {"center": np.array([0, 400]), "radius": radius},
+    {"center": np.array([4000, 2000]), "radius": radius},
+    {"center": np.array([3000, 4500]), "radius": radius},
+    {"center": np.array([4500, 2500]), "radius": radius},
+    {"center": np.array([-2000, 3000]), "radius": radius},
+    {"center": np.array([-4000, 1000]), "radius": radius},
+    {"center": np.array([-5000, -2000]), "radius": radius},
+    {"center": np.array([-3000, -4000]), "radius": radius},
+    {"center": np.array([1000, -3000]), "radius": radius},
+    {"center": np.array([2000, -1000]), "radius": radius},
+    {"center": np.array([-1000, 2000]), "radius": radius},
+    {"center": np.array([-1500, -1500]), "radius": radius},
+    {"center": np.array([2500, 3500]), "radius": radius},
+    {"center": np.array([4500, -3000]), "radius": radius},
+    {"center": np.array([-3500, -2500]), "radius": radius},
+    {"center": np.array([3000, 1000]), "radius": radius},
+    {"center": np.array([-500, -500]), "radius": radius}
 ]
 
 def check_collision(p1, p2, obs, radius_scale=1.0):
@@ -30,8 +45,8 @@ def check_collision(p1, p2, obs, radius_scale=1.0):
     return (0 <= t1 <= 1) or (0 <= t2 <= 1)
 
 def generate_targets(start, target, num=10, offset=6000.0, seed=None, max_attempts=1000):
-    # if seed is not None:
-    #     np.random.seed(seed)
+    if seed is not None:
+        np.random.seed(seed)
 
     vec = target - start
     base = start + vec * 0.5
@@ -71,7 +86,7 @@ def generate_targets(start, target, num=10, offset=6000.0, seed=None, max_attemp
     return targets
 
 def plan_path(start, target, obstacles):
-    candidates = generate_targets(start, target)
+    candidates = generate_targets(start, target, num=100, seed=seed)
     candidates.append(target)
 
     def angle_from_goal(mid):
@@ -148,8 +163,8 @@ for step in range(max_steps):
 
 # --- 描画 ---
 fig, ax = plt.subplots(figsize=(10, 8))
-ax.set_xlim(-6500, 6500)
-ax.set_ylim(-5000, 5000)
+ax.set_xlim(-8000, 8000)
+ax.set_ylim(-7000, 7000)
 ax.set_aspect('equal')
 ax.set_title('Incremental Path Following with Replanning')
 

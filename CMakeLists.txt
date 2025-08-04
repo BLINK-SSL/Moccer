@@ -61,7 +61,9 @@ file(GLOB FINDER_SOURCES ${SRC_DIR}/finder/*.cpp)
 # file(GLOB NET_HEADERS ${NET_DIR}/*.h)
 
 find_package(Eigen3 REQUIRED)
-# target_link_libraries(Moccer Eigen3::Eigen)
+
+find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
 
 # Compile Protobuf files
 file(GLOB PROTO_FILES "${PROTOBUF_SOURCE_DIR}/*.proto")
@@ -90,11 +92,16 @@ include_directories(${PROTOBUF_GENERATE_DIR})
 add_executable(Moccer main.cpp ${SOURCES})
 
 # Link libraries
+
 target_link_libraries(Moccer
     ${Protobuf_LIBRARIES}
     Eigen3::Eigen
     Threads::Threads
+    GL
+    GLU
+    glut
 )
+
 
 # Set runtime directory
 set_target_properties(Moccer PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

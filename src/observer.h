@@ -16,7 +16,7 @@ class Observer {
         Receiver receiver;
 
 
-    private:
+    // private:
         Robot* blueRobots;
         Robot* yellowRobots;
 

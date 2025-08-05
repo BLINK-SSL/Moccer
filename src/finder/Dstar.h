@@ -87,9 +87,11 @@ class Dstar {
   void   updateStart(int x, int y);
   void   updateGoal(int x, int y);
   bool   replan();
-  void   draw();
+  float   draw();
   void   drawCell(state s,float z);
   void   addCircularObstacle(int cx, int cy, int outerRadius, int innerRadius);
+  void   addFieldObstacle();
+  void   resetMap();
 
   list<state> getPath();
 

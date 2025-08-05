@@ -6,7 +6,7 @@ DstarDraw::DstarDraw(int width, int height, int fieldWidth, int fieldHeight)
     dstar = new Dstar();
     dxRatio = static_cast<float>(ww) / fw;
     dyRatio = static_cast<float>(hh) / fh;
-    dRatio = 75;
+    dRatio = 50;
 }
 
 DstarDraw::~DstarDraw() {
@@ -20,7 +20,7 @@ void DstarDraw::initGL() {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     
-    glOrtho(-6000 / dRatio, 6000 / dRatio, -4500 / dRatio, 4500 / dRatio, -1, 1);
+    glOrtho(-6700 / dRatio, 6700 / dRatio, -5200 / dRatio, 5200 / dRatio, -1, 1);
     glMatrixMode(GL_MODELVIEW);
 }
 
@@ -30,20 +30,32 @@ void DstarDraw::resizeGLScene(int width, int height) {
     // glViewport(0, 0, ww, hh);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(-6000 / dRatio, 6000 / dRatio, -4500 / dRatio, 4500 / dRatio, -1, 1);
+    glOrtho(-6700 / dRatio, 6700 / dRatio, -5200 / dRatio, 5200 / dRatio, -1, 1);
     // glOrtho(0, ww, 0, hh, -1, 1);
     glMatrixMode(GL_MODELVIEW);
 }
 
-void DstarDraw::drawGLScene() {
+void DstarDraw::drawGLScene(Robot* blueRobots, Robot* yellowRobots) {
     usleep(100);
+    dstar->resetMap();
+    dstar->updateStart(static_cast<int>(blueRobots[0].x / dRatio), static_cast<int>(blueRobots[0].y / dRatio));
+    for (int i = 0; i < 16; ++i) {
+        if (blueRobots[i].confidence > 0.5) {
+            if (i == 0) continue;
+            dstar->addCircularObstacle(static_cast<int>(blueRobots[i].x / dRatio), static_cast<int>(blueRobots[i].y / dRatio), 600, 300);
+        }
+        if (yellowRobots[i].confidence > 0.5) {
+            dstar->addCircularObstacle(static_cast<int>(yellowRobots[i].x / dRatio), static_cast<int>(yellowRobots[i].y / dRatio), 600, 300);
+        }
+    }
+    dstar->addFieldObstacle();
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
     glPushMatrix();
 
     if (b_autoreplan) dstar->replan();
-    dstar->draw();
-
+    radian = dstar->draw();
+    // std::cout << "Degree: " << radian * 180 / M_PI << std::endl;
     glPopMatrix();
     glutSwapBuffers();
 }
@@ -66,7 +78,8 @@ void DstarDraw::keyPressed(unsigned char key, int x, int y) {
         case 'c':
         case 'C':
             dstar->init(-5500 / dRatio, -4000 / dRatio, 5500 / dRatio, 4000 / dRatio, dRatio);
-            dstar->addCircularObstacle(0, 0, 10, 9);
+            dstar->addFieldObstacle();
+            dstar->addCircularObstacle(0, 0, 180, 100);
             break;
     }
 }
@@ -95,11 +108,6 @@ void DstarDraw::mouseMotionFunc(int x, int y) {
     y -= hh / 2; // Invert y-axis
     x = static_cast<int>(x / dxRatio);
     y = -static_cast<int>(y / dyRatio);
-
-    std::cout << "Mouse clicked at: " << x << ", " << y << std::endl;
-    std::cout << "Ratio: " << dxRatio << ", " << dyRatio << std::endl;
-    std::cout << "x: " << x << ", y: " << y << std::endl;
-    std::cout << std::endl;
 
     if (mstate == GLUT_DOWN) {
         if (mbutton == GLUT_LEFT_BUTTON) {

@@ -5,18 +5,13 @@
 
 #include "Dstar.h"
 
-#ifdef USE_OPEN_GL
 #ifdef MACOS
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
-#endif
-#endif
-
 #include <GLUT/glut.h>
-// #include <GL/gl.h>
-// #include <GL/glu.h>
-
+#else
+#include <GL/glut.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif
 
 /* void Dstar::Dstar()
  * --------------------------
@@ -403,33 +398,66 @@ void Dstar::updateCell(int x, int y, double val) {
  * 8-way graph this list contains all of a cells neighbours. Unless
  * the cell is occupied in which case it has no successors.
  */
+// void Dstar::getSucc(state u,list<state> &s) {
+
+//   s.clear();
+//   u.k.first  = -1;
+//   u.k.second = -1;
+
+//   if (occupied(u)) return;
+
+//   u.x += 1;
+//   s.push_front(u);
+//   u.y += 1;
+//   s.push_front(u);
+//   u.x -= 1;
+//   s.push_front(u);
+//   u.x -= 1;
+//   s.push_front(u);
+//   u.y -= 1;
+//   s.push_front(u);
+//   u.y -= 1;
+//   s.push_front(u);
+//   u.x += 1;
+//   s.push_front(u);
+//   u.x += 1;
+//   s.push_front(u);
+
+// }
 void Dstar::getSucc(state u,list<state> &s) {
-
   s.clear();
-  u.k.first  = -1;
-  u.k.second = -1;
 
-  if (occupied(u)) return;
+  // 4近傍（上下左右）はそのまま追加
+  const int dx4[4] = { 1, 0, -1, 0 };
+  const int dy4[4] = { 0, 1,  0, -1 };
+  for (int i = 0; i < 4; ++i) {
+    state v = u;
+    v.x += dx4[i];
+    v.y += dy4[i];
+    if (!occupied(v)) s.push_back(v);
+  }
 
-  u.x += 1;
-  s.push_front(u);
-  u.y += 1;
-  s.push_front(u);
-  u.x -= 1;
-  s.push_front(u);
-  u.x -= 1;
-  s.push_front(u);
-  u.y -= 1;
-  s.push_front(u);
-  u.y -= 1;
-  s.push_front(u);
-  u.x += 1;
-  s.push_front(u);
-  u.x += 1;
-  s.push_front(u);
+  // 斜め4方向：両方の隣接セルもチェック
+  const int dx8[4] = {  1, -1, -1, 1 };
+  const int dy8[4] = {  1,  1, -1,-1 };
+  for (int i = 0; i < 4; ++i) {
+    state v = u;
+    v.x += dx8[i];
+    v.y += dy8[i];
 
+    // チェックする 2 つの直交セル
+    state side1 = u;
+    side1.x += dx8[i];
+    side1.y += 0;
+    state side2 = u;
+    side2.x += 0;
+    side2.y += dy8[i];
+
+    if (!occupied(v) && !occupied(side1) && !occupied(side2)) {
+      s.push_back(v);
+    }
+  }
 }
-
 /* void Dstar::getPred(state u,list<state> &s)
  * --------------------------
  * Returns a list of all the predecessor states for state u. Since
@@ -467,7 +495,6 @@ void Dstar::getPred(state u,list<state> &s) {
  * Update the position of the robot, this does not force a replan.
  */
 void Dstar::updateStart(int x, int y) {
-
   s_start.x = x;
   s_start.y = y;
 
@@ -604,7 +631,7 @@ bool Dstar::replan() {
   return true;
 }
 
-void Dstar::draw() {
+float Dstar::draw() {
 
   ds_ch::iterator iter;
   ds_oh::iterator iter1;
@@ -639,12 +666,14 @@ void Dstar::draw() {
   glBegin(GL_LINE_STRIP);
   glColor3f(0.6, 0.1, 0.4);
 
+  int count = 0;
+  float radian = 0.0;
   for(iter2=path.begin(); iter2 != path.end(); iter2++) {
     glVertex3f(iter2->x, iter2->y, 0.2);
   }
   glEnd();
-
 }
+
 
 void Dstar::drawCell(state s, float size) {
 
@@ -664,23 +693,46 @@ void Dstar::drawCell(state s, float size) {
 
 
 void Dstar::addCircularObstacle(int cx, int cy, int outerRadius, int innerRadius) {
+    // for (int x = cx - outerRadius; x <= cx + outerRadius; ++x) {
+    //     for (int y = cy - outerRadius; y <= cy + outerRadius; ++y) {
+    //         int dx = abs(x - cx);
+    //         int dy = abs(y - cy);
+    //         int manhattanDist = dx + dy;
+    //         if (manhattanDist <= outerRadius && manhattanDist >= innerRadius) {
+    //             updateCell(x, y, -1);
+    //         }
+    //     }
+    // }
+    outerRadius /= dRatio;
+    innerRadius /= dRatio;
     for (int x = cx - outerRadius; x <= cx + outerRadius; ++x) {
         for (int y = cy - outerRadius; y <= cy + outerRadius; ++y) {
-            int dx = abs(x - cx);
-            int dy = abs(y - cy);
-            int manhattanDist = dx + dy;
-            if (manhattanDist <= outerRadius && manhattanDist >= innerRadius) {
+            int dx = x - cx;
+            int dy = y - cy;
+            int distSq = dx * dx + dy * dy;
+            if (distSq <= outerRadius * outerRadius && distSq >= innerRadius * innerRadius) {
                 updateCell(x, y, -1);
             }
         }
     }
-    for (int i = -(6000 / dRatio); i < (6000 / dRatio); i++) {
-      updateCell(i, 4500 / dRatio, -1);
-      updateCell(i, -4500 / dRatio, -1);
+}
+
+void Dstar::addFieldObstacle() {
+    for (int i = -(6700 / dRatio); i < (6700 / dRatio); i++) {
+      updateCell(i, 5200 / dRatio, -1);
+      updateCell(i, -5200 / dRatio, -1);
     }
-    for (int i = -(4500 / dRatio); i < (4500 / dRatio); i++) {
-      updateCell(6000 / dRatio, i, -1);
-      updateCell(-6000 / dRatio, i, -1);
+    for (int i = -(5200 / dRatio); i < (5200 / dRatio); i++) {
+      updateCell(6700 / dRatio, i, -1);
+      updateCell(-6700 / dRatio, i, -1);
     }
 }
 
+void Dstar::resetMap()
+{
+  cellHash.clear();
+  openHash.clear();
+  while(!openList.empty()) openList.pop();
+  path.clear();
+  k_m = 0;
+}

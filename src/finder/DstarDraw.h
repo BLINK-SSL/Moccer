@@ -1,13 +1,13 @@
 #ifndef DSTAR_DRAW_H
 #define DSTAR_DRAW_H
 
-#ifdef MACOS
+// #ifdef MACOS
 #include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#endif
+// #else
+// #include <GL/glut.h>
+// #include <GL/gl.h>
+// #include <GL/glu.h>
+// #endif
 
 #include <stdlib.h>
 #include <unistd.h>

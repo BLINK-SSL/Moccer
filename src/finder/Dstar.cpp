@@ -5,13 +5,13 @@
 
 #include "Dstar.h"
 
-#ifdef MACOS
+// #ifdef MACOS
 #include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#endif
+// #else
+// #include <GL/glut.h>
+// #include <GL/gl.h>
+// #include <GL/glu.h>
+// #endif
 
 /* void Dstar::Dstar()
  * --------------------------
@@ -427,7 +427,7 @@ void Dstar::updateCell(int x, int y, double val) {
 void Dstar::getSucc(state u,list<state> &s) {
   s.clear();
 
-  // 4�ߖT�i�㉺���E�j�͂��̂܂ܒǉ�
+  // 4�ߖT�i�㉺���E�j�͂��̂܂ܒǉ�
   const int dx4[4] = { 1, 0, -1, 0 };
   const int dy4[4] = { 0, 1,  0, -1 };
   for (int i = 0; i < 4; ++i) {
@@ -437,7 +437,7 @@ void Dstar::getSucc(state u,list<state> &s) {
     if (!occupied(v)) s.push_back(v);
   }
 
-  // �΂�4�����F�����̗אڃZ�����`�F�b�N
+  // �΂�4�����F�����̗אڃZ�����`�F�b�N
   const int dx8[4] = {  1, -1, -1, 1 };
   const int dy8[4] = {  1,  1, -1,-1 };
   for (int i = 0; i < 4; ++i) {
@@ -445,7 +445,7 @@ void Dstar::getSucc(state u,list<state> &s) {
     v.x += dx8[i];
     v.y += dy8[i];
 
-    // �`�F�b�N���� 2 �̒����Z��
+    // �`�F�b�N���� 2 �̒����Z��
     state side1 = u;
     side1.x += dx8[i];
     side1.y += 0;
@@ -659,18 +659,29 @@ float Dstar::draw() {
   //   drawCell(iter1->first, 0.2);
   // }
 
-
   glEnd();
 
   glLineWidth(4);
   glBegin(GL_LINE_STRIP);
   glColor3f(0.6, 0.1, 0.4);
 
-  int count = 0;
-  float radian = 0.0;
   for(iter2=path.begin(); iter2 != path.end(); iter2++) {
     glVertex3f(iter2->x, iter2->y, 0.2);
   }
+
+        Point local_goal = get_next_local_goal(path, s_start);
+
+        // float dist_to_goal = std::hypot(local_goal.x - robot.x, local_goal.y - robot.y);
+        float dist_to_goal = std::hypot(local_goal.x - s_start.x, local_goal.y - s_start.y);
+
+        VelocityCommand cmd = DWA(robot, local_goal);
+        robot = simulate_motion(robot, cmd);
+
+        // OpenGL描画などがここに来る（あなたのコード）
+        glBegin(GL_LINE_STRIP);
+        for (const auto& p : path) {
+            glVertex3f(p.x, p.y, 0.2);
+        }
   glEnd();
 }
 
@@ -735,4 +746,87 @@ void Dstar::resetMap()
   while(!openList.empty()) openList.pop();
   path.clear();
   k_m = 0;
+}
+
+
+
+// --- 評価関数（シンプルにゴールへの距離） ---
+float Dstar::evaluate_trajectory(const RobotState& state, const Point& goal) {
+    float dx = state.x - goal.x;
+    float dy = state.y - goal.y;
+    return std::sqrt(dx*dx + dy*dy);
+}
+
+// --- DWA本体 ---
+VelocityCommand DWA(const RobotState& current, const Point& goal) {
+    const float MAX_V = 1.0; // 最大速度
+    const float MAX_W = 1.0; // 最大角速度
+    const float DT = 0.1; // 時間刻み
+    const float PREDICT_TIME = 1.0; // 予測時間
+    float best_score = std::numeric_limits<float>::max();
+    VelocityCommand best_cmd = {0, 0};
+
+    for (float v = 0; v <= MAX_V; v += 0.1) {
+        for (float w = -MAX_W; w <= MAX_W; w += 0.1) {
+            RobotState sim = current;
+
+            // 軌道を予測
+            for (float t = 0; t < PREDICT_TIME; t += DT) {
+                sim.x += v * std::cos(sim.theta) * DT;
+                sim.y += v * std::sin(sim.theta) * DT;
+                sim.theta += w * DT;
+            }
+
+            float score = evaluate_trajectory(sim, goal);
+            if (score < best_score) {
+                best_score = score;
+                best_cmd = {v, w};
+            }
+        }
+    }
+
+    return best_cmd;
+}
+
+// --- ロボット状態更新 ---
+RobotState simulate_motion(const RobotState& state, const VelocityCommand& cmd) {
+    const float DT = 0.1; // 時間刻み
+
+    RobotState next = state;
+    next.x += cmd.v * std::cos(state.theta) * DT;
+    next.y += cmd.v * std::sin(state.theta) * DT;
+    next.theta += cmd.w * DT;
+    next.v = cmd.v;
+    next.w = cmd.w;
+    return next;
+}
+
+// --- path から次の目標点を選ぶ ---
+Point get_next_local_goal(const std::vector<state>& path, const state& robot) {
+    for (const auto& p : path) {
+        float dist = std::hypot(p.x - robot.x, p.y - robot.y);
+        if (dist > 1.0) return p;
+    }
+    return path.back(); // 最後の目標
+}
+
+// --- 統合ループ ---
+void navigate_with_dwa(const std::vector<Point>& path, RobotState& robot) {
+    const float GOAL_TOLERANCE = 0.1; // ゴールまでの許容距離
+    while (true) {
+        Point local_goal = get_next_local_goal(path, robot);
+
+        float dist_to_goal = std::hypot(local_goal.x - robot.x, local_goal.y - robot.y);
+        if (dist_to_goal < GOAL_TOLERANCE) break;
+
+        VelocityCommand cmd = DWA(robot, local_goal);
+        robot = simulate_motion(robot, cmd);
+
+        // OpenGL描画などがここに来る（あなたのコード）
+        glBegin(GL_LINE_STRIP);
+        for (const auto& p : path) {
+            glVertex3f(p.x, p.y, 0.2);
+        }
+        glEnd();
+    }
 }

@@ -108,6 +108,12 @@ class Dstar {
   ds_ch cellHash;
   ds_oh openHash;
 
+  float MAX_V;     
+  float MAX_W;    
+  float DT;        
+  float PREDICT_TIME;
+  float GOAL_TOLERANCE;
+
   bool   close(double x, double y);
   void   makeNewCell(state u);
   double getG(state u);
@@ -131,5 +137,21 @@ class Dstar {
 
   int dRatio;
 };
+
+struct Point {
+    float x, y;
+};
+
+struct RobotState {
+    float x, y, theta; // 座標と向き（ラジアン）
+    float v, w;        // 線速度と角速度
+};
+
+struct VelocityCommand {
+    float v; // 線速度
+    float w; // 角速度
+};
+
+
 
 #endif

@@ -14,6 +14,17 @@
 #include <stdio.h>
 #include <ext/hash_map>
 
+#ifdef MACOS
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif
+
+#include "DWA.h"
+#include "../models/robot.h"
+
 using namespace std;
 using namespace __gnu_cxx;
 
@@ -87,7 +98,7 @@ class Dstar {
   void   updateStart(int x, int y);
   void   updateGoal(int x, int y);
   bool   replan();
-  float   draw();
+  Pair   draw(float dRatio, Robot* blueRobots, Robot* yellowRobots);
   void   drawCell(state s,float z);
   void   addCircularObstacle(int cx, int cy, int outerRadius, int innerRadius);
   void   addFieldObstacle();
@@ -135,15 +146,17 @@ class Dstar {
   bool   isValid(state u);
   float  keyHashCode(state u);
 
-  int dRatio;
+  float dRatio;
+
+  DWAPlanner dwaPlanner;
 };
 
-struct Point {
-    float x, y;
-};
+// struct Point {
+//     float x, y;
+// };
 
 struct RobotState {
-    float x, y, theta; // 座標と向き（ラジアン）
+    float x, y, theta; // 座標と向き?��ラジアン?�?
     float v, w;        // 線速度と角速度
 };
 

@@ -35,17 +35,17 @@ void DstarDraw::resizeGLScene(int width, int height) {
     glMatrixMode(GL_MODELVIEW);
 }
 
-void DstarDraw::drawGLScene(Robot* blueRobots, Robot* yellowRobots) {
-    usleep(100);
+Pair DstarDraw::drawGLScene(Robot* blueRobots, Robot* yellowRobots) {
+    // usleep(100);
     dstar->resetMap();
     dstar->updateStart(static_cast<int>(blueRobots[0].x / dRatio), static_cast<int>(blueRobots[0].y / dRatio));
     for (int i = 0; i < 16; ++i) {
         if (blueRobots[i].confidence > 0.5) {
             if (i == 0) continue;
-            dstar->addCircularObstacle(static_cast<int>(blueRobots[i].x / dRatio), static_cast<int>(blueRobots[i].y / dRatio), 600, 300);
+            dstar->addCircularObstacle(static_cast<int>(blueRobots[i].x / dRatio), static_cast<int>(blueRobots[i].y / dRatio), 200, 100);
         }
         if (yellowRobots[i].confidence > 0.5) {
-            dstar->addCircularObstacle(static_cast<int>(yellowRobots[i].x / dRatio), static_cast<int>(yellowRobots[i].y / dRatio), 600, 300);
+            dstar->addCircularObstacle(static_cast<int>(yellowRobots[i].x / dRatio), static_cast<int>(yellowRobots[i].y / dRatio), 200, 100);
         }
     }
     dstar->addFieldObstacle();
@@ -54,10 +54,11 @@ void DstarDraw::drawGLScene(Robot* blueRobots, Robot* yellowRobots) {
     glPushMatrix();
 
     if (b_autoreplan) dstar->replan();
-    radian = dstar->draw();
+    Pair pair = dstar->draw(dRatio, blueRobots, yellowRobots);
     // std::cout << "Degree: " << radian * 180 / M_PI << std::endl;
     glPopMatrix();
     glutSwapBuffers();
+    return pair;
 }
 
 void DstarDraw::keyPressed(unsigned char key, int x, int y) {
@@ -79,7 +80,7 @@ void DstarDraw::keyPressed(unsigned char key, int x, int y) {
         case 'C':
             dstar->init(-5500 / dRatio, -4000 / dRatio, 5500 / dRatio, 4000 / dRatio, dRatio);
             dstar->addFieldObstacle();
-            dstar->addCircularObstacle(0, 0, 180, 100);
+            dstar->addCircularObstacle(0, 0, 90, 70);
             break;
     }
 }

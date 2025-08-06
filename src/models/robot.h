@@ -3,6 +3,10 @@
 
 #include "ssl_vision_detection.pb.h"
 
+struct Point {
+    float x, y;
+};
+
 class Robot {
 public:
     Robot();
@@ -16,4 +20,8 @@ public:
     float pixelX;
     float pixelY;
     float height;
+
+    Point velocity;
+    float angularVelocity;
+
 };

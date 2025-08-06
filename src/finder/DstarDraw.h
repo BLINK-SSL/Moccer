@@ -1,17 +1,11 @@
 #ifndef DSTAR_DRAW_H
 #define DSTAR_DRAW_H
 
-// #ifdef MACOS
-#include <GLUT/glut.h>
-// #else
-// #include <GL/glut.h>
-// #include <GL/gl.h>
-// #include <GL/glu.h>
-// #endif
 
 #include <stdlib.h>
 #include <unistd.h>
 #include "Dstar.h"
+
 #include "../models/robot.h"
 
 class DstarDraw {
@@ -21,7 +15,7 @@ public:
 
     void initGL();
     void resizeGLScene(int width, int height);
-    void drawGLScene(Robot* blueRobots, Robot* yellowRobots);
+    Pair drawGLScene(Robot* blueRobots, Robot* yellowRobots);
     void keyPressed(unsigned char key, int x, int y);
     void mouseFunc(int button, int state, int x, int y);
     void mouseMotionFunc(int x, int y);

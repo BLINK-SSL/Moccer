@@ -21,10 +21,10 @@ DstarDraw* drawer = new DstarDraw(windowWidth, windowHeight, fieldWidth, fieldHe
 
 Observer observer;
 
-
 void display() { 
     observer.update();
-    drawer->drawGLScene(observer.blueRobots, observer.yellowRobots);
+    Pair pair = drawer->drawGLScene(observer.blueRobots, observer.yellowRobots);
+    observer.sender.send(false, pair.Target_Velocity, pair.Target_Angular_Velocity);
 }
 void reshape(int w, int h) { drawer->resizeGLScene(w, h); }
 void keyboard(unsigned char key, int x, int y) { drawer->keyPressed(key, x, y); }

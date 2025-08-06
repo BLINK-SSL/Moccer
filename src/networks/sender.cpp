@@ -16,21 +16,20 @@ Sender::Sender() :
 Sender::~Sender() {
 }
 
-void Sender::send(bool is_yellow, double angle) {
+void Sender::send(bool is_yellow, double vel, double angle) {
     mocSim_Packet packet;
     
     mocSim_Commands commands;
     commands.set_timestamp(1234567890);
     commands.set_isteamyellow(is_yellow);
-
     for (int i = 0; i < 1; i++) {
         auto* command = commands.add_robot_commands();
         command->set_id(i);
         command->set_kickspeedx(0.0);
         command->set_kickspeedz(0.0);
-        command->set_veltangent(cos(angle));
-        command->set_velnormal(sin(angle));
-        command->set_velangular(0);
+        command->set_veltangent(vel);
+        command->set_velnormal(0);
+        command->set_velangular(angle/2);
         command->set_spinner(true);
         command->set_wheelsspeed(0.0);
         // command->set_wheel1(0.0);

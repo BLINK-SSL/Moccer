@@ -19,7 +19,7 @@ class Sender {
 public:
     Sender();
     ~Sender();
-    void send(bool is_yellow, double vel, double angle);
+    void send(bool is_yellow, double vel, double angle, double orientation);
 
 private:
     boost::asio::io_context ioContext_;

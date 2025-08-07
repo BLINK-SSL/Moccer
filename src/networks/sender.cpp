@@ -16,7 +16,7 @@ Sender::Sender() :
 Sender::~Sender() {
 }
 
-void Sender::send(bool is_yellow, double vel, double angle) {
+void Sender::send(bool is_yellow, double vel, double angle, double orientation) {
     mocSim_Packet packet;
     
     mocSim_Commands commands;
@@ -27,11 +27,17 @@ void Sender::send(bool is_yellow, double vel, double angle) {
         command->set_id(i);
         command->set_kickspeedx(0.0);
         command->set_kickspeedz(0.0);
+        float vel_x = vel * cos(angle);
+        float vel_y = vel * sin(angle);
+        float rel_vel_x =  vel_x * cos(orientation) - vel_y * sin(orientation);
+        float rel_vel_y =  vel_x * sin(orientation) + vel_y * cos(orientation);
+
         command->set_veltangent(vel);
+        std::cout << "Sending velocity: " << vel << ", angle: " << angle*180/3.14 << std::endl;
         command->set_velnormal(0);
-        command->set_velangular(angle/2);
+        command->set_velangular(angle);
         command->set_spinner(true);
-        command->set_wheelsspeed(0.0);
+        command->set_wheelsspeed(false);
         // command->set_wheel1(0.0);
         // command->set_wheel2(0.0);
         // command->set_wheel3(0.0);

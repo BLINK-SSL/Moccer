@@ -39,13 +39,13 @@ Pair DstarDraw::drawGLScene(Robot* blueRobots, Robot* yellowRobots) {
     // usleep(100);
     dstar->resetMap();
     dstar->updateStart(static_cast<int>(blueRobots[0].x / dRatio), static_cast<int>(blueRobots[0].y / dRatio));
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i < 11; ++i) {
         if (blueRobots[i].confidence > 0.5) {
             if (i == 0) continue;
-            dstar->addCircularObstacle(static_cast<int>(blueRobots[i].x / dRatio), static_cast<int>(blueRobots[i].y / dRatio), 200, 100);
+            dstar->addCircularObstacle(static_cast<int>(blueRobots[i].x / dRatio), static_cast<int>(blueRobots[i].y / dRatio), 200, 0);
         }
         if (yellowRobots[i].confidence > 0.5) {
-            dstar->addCircularObstacle(static_cast<int>(yellowRobots[i].x / dRatio), static_cast<int>(yellowRobots[i].y / dRatio), 200, 100);
+            dstar->addCircularObstacle(static_cast<int>(yellowRobots[i].x / dRatio), static_cast<int>(yellowRobots[i].y / dRatio), 200, 0);
         }
     }
     dstar->addFieldObstacle();
@@ -78,7 +78,7 @@ void DstarDraw::keyPressed(unsigned char key, int x, int y) {
             break;
         case 'c':
         case 'C':
-            dstar->init(-5500 / dRatio, -4000 / dRatio, 5500 / dRatio, 4000 / dRatio, dRatio);
+            dstar->init(-5500 / dRatio, -4000 / dRatio, 0 / dRatio, 0 / dRatio, dRatio);
             dstar->addFieldObstacle();
             dstar->addCircularObstacle(0, 0, 90, 70);
             break;

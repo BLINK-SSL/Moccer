@@ -668,14 +668,16 @@ Pair Dstar::draw(float dRatio, Robot* blueRobots, Robot* yellowRobots) {
   }
   Coordinate s_start_coord = {s_start.x * dRatio, s_start.y * dRatio};
   Coordinate s_goal_coord = {s_goal.x * dRatio, s_goal.y * dRatio};
-  Bot_Model bot_model = {1000.0, 8.0, 300.0, 4};
+  Bot_Model bot_model = {2000.0, 60, 100.0, 60}; // 60 degrees in radians
   // std::cout << "orientation: " << blueRobots[0].orientation << std::endl;
   float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
   // std::cout << "velocity: " << velocity << std::endl;
   // std::cout << "angularVelocity: " << blueRobots[0].angularVelocity << std::endl;
   DWAPlanner dwaPlanner;
-  Pair pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation*180/3.14, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
-  // std::cout << "DWA Planner: " << pair.Target_Velocity << ", " << pair.Target_Angular_Velocity << std::endl;
+  Pair pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
+  std::cout << "DWA Planner: " << pair.Target_Velocity << ", " << pair.Target_Angular_Velocity << std::endl;
+  std::cout << "Robot Velocity: " << velocity << ", Robot Angular Velocity: " << blueRobots[0].angularVelocity << std::endl;
+  std::cout << std::endl;
   glEnd();
   return pair;
 }

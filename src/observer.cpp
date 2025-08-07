@@ -36,7 +36,7 @@ void Observer::update()
         if (deltaAngle > M_PI) deltaAngle -= 2 * M_PI;
         if (deltaAngle < -M_PI) deltaAngle += 2 * M_PI;
 
-        blueRobots[i].angularVelocity = deltaAngle * fps * (180.0 / M_PI) ;
+        blueRobots[i].angularVelocity = deltaAngle * fps; // ƒ‰ƒWƒAƒ“‚©‚ç“x‚É•ÏŠ·
 
         // std::cout << "velocity of blue robot " << i << ": "
         //           << "x=" << blueRobots[i].velocity.x

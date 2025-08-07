@@ -24,7 +24,7 @@ Observer observer;
 void display() { 
     observer.update();
     Pair pair = drawer->drawGLScene(observer.blueRobots, observer.yellowRobots);
-    observer.sender.send(false, pair.Target_Velocity, pair.Target_Angular_Velocity);
+    observer.sender.send(false, pair.Target_Velocity, pair.Target_Angular_Velocity, observer.blueRobots[0].orientation);
 }
 void reshape(int w, int h) { drawer->resizeGLScene(w, h); }
 void keyboard(unsigned char key, int x, int y) { drawer->keyPressed(key, x, y); }

@@ -9,11 +9,10 @@
 
 using namespace std;
 
-#define Max_Range 120
-#define Delta 0.016
+#define Delta 0.01
 #define Predict_Delta 0.1
-#define Velocity_Accuracy 1
-#define Angular_Velocity_Accuracy 0.1
+#define Velocity_Accuracy 100
+#define Angular_Velocity_Accuracy 1
 #define One_Block 1.0
 #define Safe_Distance 200.0 //ˆÀ‘S‹——£
 #define Alpha 0.5 //Obstacle
@@ -177,9 +176,10 @@ public:
             for (double Angular_Velocity = Now_Angular_Velocity - Predict_Delta * Model.Max_Angular_Acceleration;
                  Angular_Velocity <= Now_Angular_Velocity + Predict_Delta *
                                                             Model.Max_Angular_Acceleration; Angular_Velocity += Angular_Velocity_Accuracy) {
-                if (fabs(Velocity) > Model.Max_Velocity || fabs(Angular_Velocity) > Model.Max_Angular_Velocity){
-                    continue;
-                }
+                // std::cout << "Velocity: " << Velocity << ", Angular Velocity: " << Angular_Velocity << std::endl;
+                // if (fabs(Velocity) > Model.Max_Velocity || fabs(Angular_Velocity) > Model.Max_Angular_Velocity){
+                //     continue;
+                // }
                 Trajectory.clear();
                 if (!Get_Trajectory(Car_Coordinate, Velocity, Now_Angle, Angular_Velocity)) continue;
 

@@ -10,7 +10,7 @@ struct Point {
 class Robot {
 public:
     Robot();
-    void update(SSL_DetectionRobot robot);
+    void update(SSL_DetectionRobot robot, float deltaTime);
 
     float confidence;
     unsigned int robotId;
@@ -23,5 +23,7 @@ public:
 
     Point velocity;
     float angularVelocity;
-
+    float pre_x;
+    float pre_y;
+    float pre_orientation;
 };

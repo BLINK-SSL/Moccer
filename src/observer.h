@@ -5,6 +5,7 @@
 
 #include "networks/sender.h"
 #include "networks/receiver.h"
+#include "finder/Dstar.h"
 
 class Observer {
     public:
@@ -12,11 +13,13 @@ class Observer {
         ~Observer();
 
         void update();
+        void waitForReceiver();
+
         Sender sender;
         Receiver receiver;
+        Dstar dstar;
 
-
-    // private:
+    private:
         Robot* blueRobots;
         Robot* yellowRobots;
         Robot* preBlueRobots;

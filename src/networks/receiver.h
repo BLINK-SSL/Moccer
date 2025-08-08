@@ -6,10 +6,58 @@
 #include <boost/asio.hpp>
 #include <thread>
 #include <atomic>
+
 #include "../models/robot.h"
 #include "mocSim_Commands.pb.h"
 #include "ssl_vision_wrapper.pb.h"
 #include "ssl_vision_detection.pb.h"
+
+class FpsCounter {
+public:
+    FpsCounter() : frameCounter(0), startTime(std::chrono::high_resolution_clock::now()) {}
+
+    void start() {
+        running_ = true;
+        fpsThread = std::thread(&FpsCounter::calculateFps, this);
+    }
+
+    void stop() {
+        running_ = false;
+        if (fpsThread.joinable()) {
+            fpsThread.join();
+        }
+    }
+
+    void calculateFps() {
+        while (running_) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            if (frameCounter > 0) {
+                std::lock_guard<std::mutex> lock(secPerFrameMutex);
+                secPerFrame = 1.0 / (frameCounter);
+                frameCounter = 0;
+            }
+            std::cout << "FPS: " << 1.0 / secPerFrame << std::endl;
+        }
+    }
+
+    std::mutex secPerFrameMutex;
+    int frameCounter;
+    double secPerFrame;
+
+    double getSecPerFrame() {
+        std::lock_guard<std::mutex> lock(secPerFrameMutex);
+        return secPerFrame;
+    }
+
+private:
+    
+    double fps;
+    std::chrono::high_resolution_clock::time_point startTime;
+
+    std::thread fpsThread;
+    std::atomic<bool> running_;
+};
+
 
 class Receiver {
 public:
@@ -31,6 +79,8 @@ public:
 
     std::mutex blueRobotMutex;
     std::mutex yellowRobotMutex;
+    
+    bool isNewWorld = false;
 
 private:
     void receiveLoop(); 
@@ -44,4 +94,8 @@ private:
 
     Robot blueRobot[16];
     Robot yellowRobot[16];
+
+    FpsCounter fpsCounter;
+    uint32_t preFrameNumber = 0;
 };
+

@@ -19,6 +19,8 @@ Receiver::Receiver()
         blueRobot[i] = Robot();
         yellowRobot[i] = Robot();
     }
+    fpsCounter.start();
+    isNewWorld = false;
 }
 
 Receiver::~Receiver() {
@@ -43,27 +45,29 @@ void Receiver::receiveLoop() {
             char recvBuf[2048];
             boost::asio::ip::udp::endpoint senderEndpoint;
             size_t len = socket_.receive_from(boost::asio::buffer(recvBuf), senderEndpoint);
-
+            
+            char buff[2048];
             SSL_WrapperPacket packet;
             if (packet.ParseFromArray(recvBuf, static_cast<int>(len))) {
                 SSL_DetectionFrame detection = packet.detection();
-                tCapture = detection.t_capture();
-                tSent = detection.t_sent();
-                if (detection.t_capture() - tCapturePre != 0) {
-                    fps = 1.0 / (detection.t_capture() - tCapturePre);
+
+                uint32_t frame_number = detection.frame_number();
+                if (frame_number != preFrameNumber) {
+                    fpsCounter.frameCounter++;
+                    preFrameNumber = frame_number;
+                    isNewWorld = true;
                 }
-                
-                tCapturePre = detection.t_capture();
+
                 {
                     std::lock_guard<std::mutex> lock(blueRobotMutex);
                     for (const auto& robot : detection.robots_blue()) {
-                        blueRobot[robot.robot_id()].update(robot);
+                        blueRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
                     }
                 }
                 {
                     std::lock_guard<std::mutex> lock(yellowRobotMutex);
                     for (const auto& robot : detection.robots_yellow()) {
-                        yellowRobot[robot.robot_id()].update(robot);
+                        yellowRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
                     }
                 }
             } else {

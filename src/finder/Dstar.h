@@ -7,6 +7,8 @@
 #define DSTAR_H
 
 #include <iostream>
+#include <thread>
+#include <mutex>
 #include <math.h>
 #include <stack>
 #include <queue>
@@ -93,6 +95,7 @@ class Dstar {
  public:
 
   Dstar();
+  ~Dstar();
   void   init(int sX, int sY, int gX, int gY, int dRatio);
   void   updateCell(int x, int y, double val);
   void   updateStart(int x, int y);
@@ -103,6 +106,11 @@ class Dstar {
   void   addCircularObstacle(int cx, int cy, int outerRadius, int innerRadius);
   void   addFieldObstacle();
   void   resetMap();
+  void   start();
+  void   stop();
+  void   update(Robot* blueRobots, Robot* yellowRobots);
+  void   run();
+  Pair   getPair();
 
   list<state> getPath();
 
@@ -149,6 +157,14 @@ class Dstar {
   float dRatio;
 
   DWAPlanner dwaPlanner;
+  std::chrono::high_resolution_clock::time_point beforeTime;
+
+  bool running_;
+  std::thread dstarThread_;
+
+  Robot blueRobots[16];
+  Robot yellowRobots[16];
+  Pair _pair;
 };
 
 // struct Point {

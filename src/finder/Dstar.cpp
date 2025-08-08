@@ -6,15 +6,32 @@
 #include "Dstar.h"
 
 
+#include <iostream>
+#include <chrono>
+using namespace std::chrono;
 /* void Dstar::Dstar()
  * --------------------------
  * Constructor sets constants.
  */
 Dstar::Dstar() {
+    maxSteps = 80000;  // node expansions before we give up
+    C1       = 1;      // cost of an unseen cell
+}
 
-  maxSteps = 80000;  // node expansions before we give up
-  C1       = 1;      // cost of an unseen cell
+Dstar::~Dstar() {
+    stop();
+}
 
+void Dstar::start() {
+    running_ = true;  
+    dstarThread_ = std::thread(&Dstar::run, this);
+}
+
+void Dstar::stop() {
+    running_ = false;
+    if (dstarThread_.joinable()) {
+        dstarThread_.join();
+    }
 }
 
 /* float Dstar::keyHashCode(state u)
@@ -420,7 +437,7 @@ void Dstar::updateCell(int x, int y, double val) {
 void Dstar::getSucc(state u,list<state> &s) {
   s.clear();
 
-  // 4è¿‘å‚ï¼ˆä¸Šä¸‹å·¦å³ï¼‰ã¯ãã®ã¾ã¾è¿½åŠ 
+  // 4‹ß–Tiã‰º¶‰Ej‚Í‚»‚Ì‚Ü‚Ü’Ç‰Á
   const int dx4[4] = { 1, 0, -1, 0 };
   const int dy4[4] = { 0, 1,  0, -1 };
   for (int i = 0; i < 4; ++i) {
@@ -430,7 +447,7 @@ void Dstar::getSucc(state u,list<state> &s) {
     if (!occupied(v)) s.push_back(v);
   }
 
-  // æ–œã‚4æ–¹å‘ï¼šä¸¡æ–¹ã®éš£æ¥ã‚»ãƒ«ã‚‚ãƒã‚§ãƒƒã‚¯
+  // Î‚ß4•ûŒüF—¼•û‚Ì—×ÚƒZƒ‹‚àƒ`ƒFƒbƒN
   const int dx8[4] = {  1, -1, -1, 1 };
   const int dy8[4] = {  1,  1, -1,-1 };
   for (int i = 0; i < 4; ++i) {
@@ -438,7 +455,7 @@ void Dstar::getSucc(state u,list<state> &s) {
     v.x += dx8[i];
     v.y += dy8[i];
 
-    // ãƒã‚§ãƒƒã‚¯ã™ã‚‹ 2 ã¤ã®ç›´äº¤ã‚»ãƒ«
+    // ƒ`ƒFƒbƒN‚·‚é 2 ‚Â‚Ì’¼ŒğƒZƒ‹
     state side1 = u;
     side1.x += dx8[i];
     side1.y += 0;
@@ -668,17 +685,29 @@ Pair Dstar::draw(float dRatio, Robot* blueRobots, Robot* yellowRobots) {
   }
   Coordinate s_start_coord = {s_start.x * dRatio, s_start.y * dRatio};
   Coordinate s_goal_coord = {s_goal.x * dRatio, s_goal.y * dRatio};
-  Bot_Model bot_model = {2000.0, 60, 100.0, 60}; // 60 degrees in radians
+  Bot_Model bot_model = {5000.0, 20, 4000.0, 50}; // 60 degrees in radians
   // std::cout << "orientation: " << blueRobots[0].orientation << std::endl;
   float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
   // std::cout << "velocity: " << velocity << std::endl;
   // std::cout << "angularVelocity: " << blueRobots[0].angularVelocity << std::endl;
   DWAPlanner dwaPlanner;
-  Pair pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
-  std::cout << "DWA Planner: " << pair.Target_Velocity << ", " << pair.Target_Angular_Velocity << std::endl;
-  std::cout << "Robot Velocity: " << velocity << ", Robot Angular Velocity: " << blueRobots[0].angularVelocity << std::endl;
-  std::cout << std::endl;
-  glEnd();
+  Pair pair = {};
+  // Pair pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
+  // calculate fps
+  // std::cout << "DWA Planner: " << pair.Target_Velocity << ", " << pair.Target_Angular_Velocity << std::endl;
+  // std::cout << "pre_x: " << blueRobots[0].pre_x << ", pre_y: " << blueRobots[0].pre_y << std::endl;
+  // std::cout << "Robot Position: (" << blueRobots[0].x << ", " << blueRobots[0].y << ")" << std::endl;
+  // std::cout << "velocity: " << blueRobots[0].velocity.x << ", " << blueRobots[0].velocity.y << std::endl;
+  // std::cout << "Robot Velocity: " << velocity << ", Robot Angular Velocity: " << blueRobots[0].angularVelocity << std::endl;
+
+  // glEnd();
+
+
+  // auto currentTime = high_resolution_clock::now();
+  // duration<float> elapsed = currentTime - beforeTime;
+  // beforeTime = currentTime;
+  // printf("Dstar::draw() took %f seconds\n", elapsed.count());
+
   return pair;
 }
 
@@ -726,6 +755,7 @@ void Dstar::addCircularObstacle(int cx, int cy, int outerRadius, int innerRadius
 }
 
 void Dstar::addFieldObstacle() {
+    float dRatio = 75.0;
     for (int i = -(6700 / dRatio); i < (6700 / dRatio); i++) {
       updateCell(i, 5200 / dRatio, -1);
       updateCell(i, -5200 / dRatio, -1);
@@ -743,4 +773,46 @@ void Dstar::resetMap()
   while(!openList.empty()) openList.pop();
   path.clear();
   k_m = 0;
+}
+
+void Dstar::update(Robot* blueRobots, Robot* yellowRobots) {
+    for (int i = 0; i < 16; ++i) {
+        this->blueRobots[i] = blueRobots[i];
+        this->yellowRobots[i] = yellowRobots[i];
+    }
+}
+
+void Dstar::run()
+{
+    while (running_) {
+        float dRatio = 75.0;
+        resetMap();
+        updateStart(static_cast<int>(blueRobots[0].x / dRatio), static_cast<int>(blueRobots[0].y / dRatio));
+        for (int i = 0; i < 11; ++i) {
+            if (blueRobots[i].confidence > 0.5) {
+                if (i == 0) continue;
+                addCircularObstacle(static_cast<int>(blueRobots[i].x / dRatio), static_cast<int>(blueRobots[i].y / dRatio), 200, 0);
+            }
+            if (yellowRobots[i].confidence > 0.5) {
+                addCircularObstacle(static_cast<int>(yellowRobots[i].x / dRatio), static_cast<int>(yellowRobots[i].y / dRatio), 200, 0);
+            }
+        }
+        addFieldObstacle();
+        // if (b_autoreplan) replan();
+        std::vector<Coordinate> D_Star_Road;
+        for (auto &coord : path) {
+          D_Star_Road.push_back({coord.x * dRatio, coord.y * dRatio});
+        }
+        Coordinate s_start_coord = {s_start.x * dRatio, s_start.y * dRatio};
+        Coordinate s_goal_coord = {s_goal.x * dRatio, s_goal.y * dRatio};
+        Bot_Model bot_model = {5000.0, 20, 4000.0, 50}; // 60 degrees in radians
+        float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
+        _pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
+        std::cout << "Robot velocity: " << velocity << ", Angular Velocity: " << blueRobots[0].angularVelocity << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+}
+
+Pair Dstar::getPair() {
+  return _pair;
 }

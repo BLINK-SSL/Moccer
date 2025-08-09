@@ -396,10 +396,10 @@ void Dstar::updateCell(int x, int y, double val) {
 
   if ((u == s_start) || (u == s_goal)) return;
 
-  makeNewCell(u);
+  // makeNewCell(u);
 
   cellHash[u].cost = val;
-  updateVertex(u);
+  // updateVertex(u);
 }
 
 /* void Dstar::getSucc(state u,list<state> &s)
@@ -437,7 +437,7 @@ void Dstar::updateCell(int x, int y, double val) {
 void Dstar::getSucc(state u,list<state> &s) {
   s.clear();
 
-  // 4‹ß–Tiã‰º¶‰Ej‚Í‚»‚Ì‚Ü‚Ü’Ç‰Á
+  // 4ï¿½ß–Tï¿½iï¿½ã‰ºï¿½ï¿½ï¿½Eï¿½jï¿½Í‚ï¿½ï¿½Ì‚Ü‚Ü’Ç‰ï¿½
   const int dx4[4] = { 1, 0, -1, 0 };
   const int dy4[4] = { 0, 1,  0, -1 };
   for (int i = 0; i < 4; ++i) {
@@ -447,7 +447,7 @@ void Dstar::getSucc(state u,list<state> &s) {
     if (!occupied(v)) s.push_back(v);
   }
 
-  // Î‚ß4•ûŒüF—¼•û‚Ì—×ÚƒZƒ‹‚àƒ`ƒFƒbƒN
+  // ï¿½Î‚ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½Fï¿½ï¿½ï¿½ï¿½ï¿½Ì—×ÚƒZï¿½ï¿½ï¿½ï¿½ï¿½`ï¿½Fï¿½bï¿½N
   const int dx8[4] = {  1, -1, -1, 1 };
   const int dy8[4] = {  1,  1, -1,-1 };
   for (int i = 0; i < 4; ++i) {
@@ -455,7 +455,7 @@ void Dstar::getSucc(state u,list<state> &s) {
     v.x += dx8[i];
     v.y += dy8[i];
 
-    // ƒ`ƒFƒbƒN‚·‚é 2 ‚Â‚Ì’¼ŒğƒZƒ‹
+    // ï¿½`ï¿½Fï¿½bï¿½Nï¿½ï¿½ï¿½ï¿½ 2 ï¿½Â‚Ì’ï¿½ï¿½ï¿½ï¿½Zï¿½ï¿½
     state side1 = u;
     side1.x += dx8[i];
     side1.y += 0;
@@ -681,10 +681,10 @@ Pair Dstar::draw(float dRatio, Robot* blueRobots, Robot* yellowRobots) {
   }
   std::vector<Coordinate> D_Star_Road;
   for (auto &coord : path) {
-    D_Star_Road.push_back({coord.x * dRatio, coord.y * dRatio});
+    D_Star_Road.push_back({static_cast<int>(coord.x * dRatio), static_cast<int>(coord.y * dRatio)});
   }
-  Coordinate s_start_coord = {s_start.x * dRatio, s_start.y * dRatio};
-  Coordinate s_goal_coord = {s_goal.x * dRatio, s_goal.y * dRatio};
+  Coordinate s_start_coord = {static_cast<int>(s_start.x * dRatio), static_cast<int>(s_start.y * dRatio)};
+  Coordinate s_goal_coord = {static_cast<int>(s_goal.x * dRatio), static_cast<int>(s_goal.y * dRatio)};
   Bot_Model bot_model = {5000.0, 20, 4000.0, 50}; // 60 degrees in radians
   // std::cout << "orientation: " << blueRobots[0].orientation << std::endl;
   float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
@@ -798,17 +798,16 @@ void Dstar::run()
             }
         }
         addFieldObstacle();
-        // if (b_autoreplan) replan();
+        replan();
         std::vector<Coordinate> D_Star_Road;
         for (auto &coord : path) {
-          D_Star_Road.push_back({coord.x * dRatio, coord.y * dRatio});
+          D_Star_Road.push_back({static_cast<int>(coord.x * dRatio), static_cast<int>(coord.y * dRatio)});
         }
-        Coordinate s_start_coord = {s_start.x * dRatio, s_start.y * dRatio};
-        Coordinate s_goal_coord = {s_goal.x * dRatio, s_goal.y * dRatio};
+        Coordinate s_start_coord = {static_cast<int>(s_start.x * dRatio), static_cast<int>(s_start.y * dRatio)};
+        Coordinate s_goal_coord = {static_cast<int>(s_goal.x * dRatio), static_cast<int>(s_goal.y * dRatio)};
         Bot_Model bot_model = {5000.0, 20, 4000.0, 50}; // 60 degrees in radians
-        float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
-        _pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
-        std::cout << "Robot velocity: " << velocity << ", Angular Velocity: " << blueRobots[0].angularVelocity << std::endl;
+        _pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, blueRobots[0].vel, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }

@@ -16,13 +16,13 @@
 #include <stdio.h>
 #include <ext/hash_map>
 
-#ifdef MACOS
+// #ifdef MACOS
 #include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#endif
+// #else
+// #include <GL/glut.h>
+// #include <GL/gl.h>
+// #include <GL/glu.h>
+// #endif
 
 #include "DWA.h"
 #include "../models/robot.h"
@@ -172,7 +172,7 @@ class Dstar {
 // };
 
 struct RobotState {
-    float x, y, theta; // 座標と向き?��ラジアン?�?
+    float x, y, theta; // 座標と向き?��ラジアン?�?
     float v, w;        // 線速度と角速度
 };
 

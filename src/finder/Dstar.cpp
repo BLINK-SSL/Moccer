@@ -651,7 +651,6 @@ Pair Dstar::draw(float dRatio, Robot* blueRobots, Robot* yellowRobots) {
 
   glBegin(GL_QUADS);
   
-
   for(iter=cellHash.begin(); iter != cellHash.end(); iter++) {
     if (iter->second.cost == 1) glColor3f(0,1,0);
     else if (iter->second.cost < 0 ) glColor3f(1,0,0);
@@ -798,7 +797,7 @@ void Dstar::run()
             }
         }
         addFieldObstacle();
-        // if (b_autoreplan) replan();
+        replan();
         std::vector<Coordinate> D_Star_Road;
         for (auto &coord : path) {
           D_Star_Road.push_back({coord.x * dRatio, coord.y * dRatio});
@@ -808,7 +807,8 @@ void Dstar::run()
         Bot_Model bot_model = {5000.0, 20, 4000.0, 50}; // 60 degrees in radians
         float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
         _pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
-        std::cout << "Robot velocity: " << velocity << ", Angular Velocity: " << blueRobots[0].angularVelocity << std::endl;
+        // std::cout << "Robot velocity: " << velocity << ", Angular Velocity: " << blueRobots[0].angularVelocity << std::endl;
+        std::cout << blueRobots[0].x << ", " << blueRobots[0].y << std::endl;/*  */
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }

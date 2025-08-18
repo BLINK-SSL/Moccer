@@ -22,6 +22,7 @@ public:
     float height;
 
     Point velocity;
+    float vel;
     float angularVelocity;
     float pre_x;
     float pre_y;

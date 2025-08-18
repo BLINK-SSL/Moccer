@@ -14,12 +14,12 @@ using namespace std;
 #define Velocity_Accuracy 100
 #define Angular_Velocity_Accuracy 1
 #define One_Block 1.0
-#define Safe_Distance 200.0 //à¿ëSãóó£
+#define Safe_Distance 200.0 //ÔøΩÔøΩÔøΩSÔøΩÔøΩÔøΩÔøΩ
 #define Alpha 0.5 //Obstacle
 #define Beta (-1) //Goal
 #define Gamma 1.0 //Velocity
 #define INT_MAX 1000000000
-#define Delta2 (-1) //Dist_To_D_Star
+#define Delta2 (0) //Dist_To_D_Star
 
 class Bot_Model {
 public:
@@ -94,11 +94,11 @@ public:
             Car_x += Now_Velocity * cos(Next_Angle) * Delta;
             Car_y += Now_Velocity * sin(Next_Angle) * Delta;
             Now_Angle = Next_Angle;
-            if (Legal_Coordinate({lround(Car_x / One_Block), lround(Car_y / One_Block)})) {
+            if (Legal_Coordinate({static_cast<int>(lround(Car_x / One_Block)), static_cast<int>(lround(Car_y / One_Block))})) {
                 // std::cout << "Time: " << Time_Sum
                 //           << ", Car position: " << lround(Car_x / One_Block) << ", " << lround(Car_y / One_Block) << std::endl;
                 // std::cout << "Adding trajectory point: " << lround(Car_x / One_Block) << ", " << lround(Car_y / One_Block) << std::endl;
-                Trajectory.push_back({lround(Car_x / One_Block), lround(Car_y / One_Block)});
+                Trajectory.push_back({static_cast<int>(Car_x / One_Block), static_cast<int>(Car_y / One_Block)});
             } else {
                 return false;
             }
@@ -130,15 +130,15 @@ public:
     }
 
     static bool cmp(Coordinate a, Coordinate b) {
-        // î‰ärÉçÉWÉbÉN
-        return a.x < b.x; // ó·
+        // ÔøΩÔøΩrÔøΩÔøΩÔøΩWÔøΩbÔøΩN
+        return a.x < b.x; // ÔøΩÔøΩ
     }
 
     double Get_D_Star_Dist(std::vector<Coordinate> D_Star_Road, Coordinate End_Road) {
         double Dist = INT_MAX;
         for (auto &i: D_Star_Road) {
-            double Temp = Get_H(End_Road, i);//òaãÅhìIòƒ??í ópÅCìsê•çø?ãó?
-            if (Temp < Dist) {//éÊì_ìûì_ç≈è¨ãó?çÏ?ì_ìû?ìIãó?
+            double Temp = Get_H(End_Road, i);//ÔøΩaÔøΩÔøΩhÔøΩIÔøΩÔøΩ??ÔøΩ ópÔøΩCÔøΩsÔøΩÔøΩÔøΩÔøΩ?ÔøΩÔøΩ?
+            if (Temp < Dist) {//ÔøΩÔøΩ_ÔøΩÔøΩÔøΩ_ÔøΩ≈èÔøΩÔøΩÔøΩ?ÔøΩÔøΩ?ÔøΩ_ÔøΩÔøΩ?ÔøΩIÔøΩÔøΩ?
                 Dist = Temp;
             }
         }
@@ -176,10 +176,10 @@ public:
             for (double Angular_Velocity = Now_Angular_Velocity - Predict_Delta * Model.Max_Angular_Acceleration;
                  Angular_Velocity <= Now_Angular_Velocity + Predict_Delta *
                                                             Model.Max_Angular_Acceleration; Angular_Velocity += Angular_Velocity_Accuracy) {
-                // std::cout << "Velocity: " << Velocity << ", Angular Velocity: " << Angular_Velocity << std::endl;
-                // if (fabs(Velocity) > Model.Max_Velocity || fabs(Angular_Velocity) > Model.Max_Angular_Velocity){
-                //     continue;
-                // }
+                std::cout << "Velocity: " << Velocity << ", Angular Velocity: " << Angular_Velocity << std::endl;
+                if (fabs(Velocity) > Model.Max_Velocity || fabs(Angular_Velocity) > Model.Max_Angular_Velocity){
+                    continue;
+                }
                 Trajectory.clear();
                 if (!Get_Trajectory(Car_Coordinate, Velocity, Now_Angle, Angular_Velocity)) continue;
 

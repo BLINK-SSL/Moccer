@@ -27,7 +27,7 @@ void Sender::send(bool is_yellow, double vel, double angle, double orientation) 
         command->set_id(i);
         command->set_kickspeedx(0.0);
         command->set_kickspeedz(0.0);
-
+        
         float vel_x = vel * cos(angle);
         float vel_y = vel * sin(angle);
         float rel_vel_x =  vel_x * cos(orientation) - vel_y * sin(orientation);

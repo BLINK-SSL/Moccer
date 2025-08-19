@@ -13,10 +13,9 @@ using namespace std::chrono;
  * --------------------------
  * Constructor sets constants.
  */
-Dstar::Dstar() {
+Dstar::Dstar(float _dRatio) : dRatio(_dRatio), running_(false) {
     maxSteps = 80000;  // node expansions before we give up
     C1       = 1;      // cost of an unseen cell
-    dRatio  = 75.0; // ratio of pixels to cells
 }
 
 Dstar::~Dstar() {

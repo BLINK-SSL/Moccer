@@ -1,6 +1,6 @@
 #include "DWA.h"
 
-DWA::DWA() {
+DWA::DWA(float _dRatio): dRatio(_dRatio) {
     running_ = false;
 }
 
@@ -66,15 +66,15 @@ bool DWA::Get_Trajectory(Coordinate Car_Coordinate, double Now_Velocity, double 
 void DWA::run() {
     while (running_) {
         std::vector<Coordinate> D_Star_Road;
-        for (auto &coord : path) {
-            D_Star_Road.push_back({static_cast<int>(coord.x * dRatio), static_cast<int>(coord.y * dRatio)});
-        }
-        Coordinate s_start_coord = {static_cast<int>(s_start.x * dRatio), static_cast<int>(s_start.y * dRatio)};
-        Coordinate s_goal_coord = {static_cast<int>(s_goal.x * dRatio), static_cast<int>(s_goal.y * dRatio)};
-        Bot_Model bot_model = {1000.0, 60}; // 60 degrees in radians
-        float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
-        _pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
-        std::cout << "Robot velocity: " << blueRobots[0].velocity.x << ", " << blueRobots[0].velocity.y << std::endl;
+        // for (auto &coord : path) {
+        //     D_Star_Road.push_back({static_cast<int>(coord.x * dRatio), static_cast<int>(coord.y * dRatio)});
+        // }
+        // Coordinate s_start_coord = {static_cast<int>(s_start.x * dRatio), static_cast<int>(s_start.y * dRatio)};
+        // Coordinate s_goal_coord = {static_cast<int>(s_goal.x * dRatio), static_cast<int>(s_goal.y * dRatio)};
+        // Bot_Model bot_model = {1000.0, 60}; // 60 degrees in radians
+        // float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
+        // _pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
+        // std::cout << "Robot velocity: " << blueRobots[0].velocity.x << ", " << blueRobots[0].velocity.y << std::endl;
         // std::cout << blueRobots[0].x << ", " << blueRobots[0].y << std::endl;/*  */
         // std::cout << "Target velocity: " << _pair.Target_Velocity << ", Target Angular Velocity: " << _pair.Target_Angular_Velocity << std::endl;
         

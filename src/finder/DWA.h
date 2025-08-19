@@ -20,7 +20,7 @@ using namespace std;
 #define Alpha 0.5 //Obstacle
 #define Beta (-1) //Goal
 #define Gamma 1.0 //Velocity
-#define INT_MAX 1000000000
+#define INT_MAX 1000000
 #define Delta2 (0) //Dist_To_D_Star
 
 class Bot_Model {
@@ -56,7 +56,7 @@ public:
 
 class DWA {
 public:
-    DWA();
+    DWA(float _dRatio);
     ~DWA();
 
     void start();
@@ -118,4 +118,5 @@ private:
 
     std::thread dwaThread_;
     std::atomic<bool> running_;
+    float dRatio;
 };

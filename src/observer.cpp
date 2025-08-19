@@ -30,6 +30,6 @@ void Observer::update()
 
     dstar.update(blueRobots, yellowRobots);
     Pair pair = dstar.getPair();
-    std::cout << "Target Velocity: " << pair.Target_Velocity << ", Target Angular Velocity: " << pair.Target_Angular_Velocity << std::endl;
+    // std::cout << "Target Velocity: " << pair.Target_Velocity << ", Target Angular Velocity: " << pair.Target_Angular_Velocity << std::endl;
     sender.send(false, pair.Target_Velocity, pair.Target_Angular_Velocity, blueRobots[0].orientation);
 }

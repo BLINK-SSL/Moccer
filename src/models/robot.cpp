@@ -30,12 +30,18 @@ void Robot::update(SSL_DetectionRobot robot, float deltaTime) {
     if (deltaTime <= 0) {
         return;
     }
-    velocity.x = (robot.x() - pre_x) / deltaTime;
-    velocity.y = (robot.y() - pre_y) / deltaTime;
-    
+    if (robot.x() - pre_x != 0) {
+        velocity.x = (robot.x() - pre_x) / deltaTime;
+    }
+    if (robot.y() - pre_y != 0) {
+        velocity.y = (robot.y() - pre_y) / deltaTime;
+    }
+
     vel = sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
     angularVelocity = (robot.orientation() - pre_orientation) / deltaTime;
     pre_x = robot.x();
     pre_y = robot.y();
+    pre_orientation = robot.orientation();
+
     pre_orientation = robot.orientation();
 }

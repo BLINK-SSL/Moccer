@@ -1,7 +1,10 @@
 // Robot.h
 #pragma once
 
+#include <cmath>
 #include "ssl_vision_detection.pb.h"
+
+using namespace std;
 
 struct Point {
     float x, y;

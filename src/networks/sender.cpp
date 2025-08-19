@@ -34,7 +34,7 @@ void Sender::send(bool is_yellow, double vel, double angle, double orientation) 
         float rel_vel_y =  vel_x * sin(orientation) + vel_y * cos(orientation);
 
         command->set_veltangent(vel/1000);
-        // std::cout << "Sending velocity: " << vel << ", angle: " << angle << std::endl;
+        std::cout << "Sending velocity: " << vel << ", angle: " << angle << std::endl;
         command->set_velnormal(0);
         command->set_velangular(angle);
         command->set_spinner(false);

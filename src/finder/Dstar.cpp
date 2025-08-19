@@ -16,6 +16,7 @@ using namespace std::chrono;
 Dstar::Dstar() {
     maxSteps = 80000;  // node expansions before we give up
     C1       = 1;      // cost of an unseen cell
+    dRatio  = 75.0; // ratio of pixels to cells
 }
 
 Dstar::~Dstar() {
@@ -40,9 +41,7 @@ void Dstar::stop() {
  * a state that have been updated
  */
 float Dstar::keyHashCode(state u) {
-
-  return (float)(u.k.first + 1193*u.k.second);
-
+    return (float)(u.k.first + 1193*u.k.second);
 }
 
 /* bool Dstar::isValid(state u)
@@ -51,12 +50,10 @@ float Dstar::keyHashCode(state u) {
  * it is in the hash table.
  */
 bool Dstar::isValid(state u) {
-
-  ds_oh::iterator cur = openHash.find(u);
-  if (cur == openHash.end()) return false;
-  if (!close(keyHashCode(u), cur->second)) return false;
-  return true;
-
+    ds_oh::iterator cur = openHash.find(u);
+    if (cur == openHash.end()) return false;
+    if (!close(keyHashCode(u), cur->second)) return false;
+    return true;
 }
 
 /* void Dstar::getPath()
@@ -64,7 +61,7 @@ bool Dstar::isValid(state u) {
  * Returns the path created by replan()
  */
 list<state> Dstar::getPath() {
-  return path;
+    return path;
 }
 
 /* bool Dstar::occupied(state u)
@@ -73,11 +70,9 @@ list<state> Dstar::getPath() {
  * otherwise. non-traversable are marked with a cost < 0.
  */
 bool Dstar::occupied(state u) {
-
-  ds_ch::iterator cur = cellHash.find(u);
-
-  if (cur == cellHash.end()) return false;
-  return (cur->second.cost < 0);
+    ds_ch::iterator cur = cellHash.find(u);
+    if (cur == cellHash.end()) return false;
+    return (cur->second.cost < 0);
 }
 
 /* void Dstar::init(int sX, int sY, int gX, int gY)
@@ -86,31 +81,31 @@ bool Dstar::occupied(state u) {
  * [S. Koenig, 2002]
  */
 void Dstar::init(int sX, int sY, int gX, int gY, int dRatio) {
-  this->dRatio = dRatio;
-  cellHash.clear();
-  path.clear();
-  openHash.clear();
-  while(!openList.empty()) openList.pop();
+    this->dRatio = dRatio;
+    cellHash.clear();
+    path.clear();
+    openHash.clear();
+    while(!openList.empty()) openList.pop();
 
-  k_m = 0;
+    k_m = 0;
 
-  s_start.x = sX;
-  s_start.y = sY;
-  s_goal.x  = gX;
-  s_goal.y  = gY;
+    s_start.x = sX;
+    s_start.y = sY;
+    s_goal.x  = gX;
+    s_goal.y  = gY;
 
-  cellInfo tmp;
-  tmp.g = tmp.rhs =  0;
-  tmp.cost = C1;
+    cellInfo tmp;
+    tmp.g = tmp.rhs =  0;
+    tmp.cost = C1;
 
-  cellHash[s_goal] = tmp;
+    cellHash[s_goal] = tmp;
 
-  tmp.g = tmp.rhs = heuristic(s_start,s_goal);
-  tmp.cost = C1;
-  cellHash[s_start] = tmp;
-  s_start = calculateKey(s_start);
+    tmp.g = tmp.rhs = heuristic(s_start,s_goal);
+    tmp.cost = C1;
+    cellHash[s_start] = tmp;
+    s_start = calculateKey(s_start);
 
-  s_last = s_start;
+    s_last = s_start;
 
 }
 /* void Dstar::makeNewCell(state u)
@@ -119,12 +114,12 @@ void Dstar::init(int sX, int sY, int gX, int gY, int dRatio) {
  */
 void Dstar::makeNewCell(state u) {
 
-  if (cellHash.find(u) != cellHash.end()) return;
+    if (cellHash.find(u) != cellHash.end()) return;
 
-  cellInfo tmp;
-  tmp.g       = tmp.rhs = heuristic(u,s_goal);
-  tmp.cost    = C1;
-  cellHash[u] = tmp;
+    cellInfo tmp;
+    tmp.g       = tmp.rhs = heuristic(u,s_goal);
+    tmp.cost    = C1;
+    cellHash[u] = tmp;
 
 }
 
@@ -134,9 +129,9 @@ void Dstar::makeNewCell(state u) {
  */
 double Dstar::getG(state u) {
 
-  if (cellHash.find(u) == cellHash.end())
-    return heuristic(u,s_goal);
-  return cellHash[u].g;
+    if (cellHash.find(u) == cellHash.end())
+        return heuristic(u,s_goal);
+    return cellHash[u].g;
 
 }
 
@@ -146,11 +141,11 @@ double Dstar::getG(state u) {
  */
 double Dstar::getRHS(state u) {
 
-  if (u == s_goal) return 0;
+    if (u == s_goal) return 0;
 
-  if (cellHash.find(u) == cellHash.end())
-    return heuristic(u,s_goal);
-  return cellHash[u].rhs;
+    if (cellHash.find(u) == cellHash.end())
+        return heuristic(u,s_goal);
+    return cellHash[u].rhs;
 
 }
 
@@ -160,8 +155,8 @@ double Dstar::getRHS(state u) {
  */
 void Dstar::setG(state u, double g) {
 
-  makeNewCell(u);
-  cellHash[u].g = g;
+    makeNewCell(u);
+    cellHash[u].g = g;
 }
 
 /* void Dstar::setRHS(state u, double rhs)
@@ -170,8 +165,8 @@ void Dstar::setG(state u, double g) {
  */
 double Dstar::setRHS(state u, double rhs) {
 
-  makeNewCell(u);
-  cellHash[u].rhs = rhs;
+    makeNewCell(u);
+    cellHash[u].rhs = rhs;
 
 }
 
@@ -180,15 +175,15 @@ double Dstar::setRHS(state u, double rhs) {
  * Returns the 8-way distance between state a and state b.
  */
 double Dstar::eightCondist(state a, state b) {
-  double temp;
-  double min = fabs(a.x - b.x);
-  double max = fabs(a.y - b.y);
-  if (min > max) {
-    double temp = min;
-    min = max;
-    max = temp;
-  }
-  return ((M_SQRT2-1.0)*min + max);
+    double temp;
+    double min = fabs(a.x - b.x);
+    double max = fabs(a.y - b.y);
+    if (min > max) {
+        double temp = min;
+        min = max;
+        max = temp;
+    }
+    return ((M_SQRT2-1.0)*min + max);
 }
 
 /* int Dstar::computeShortestPath()
@@ -202,60 +197,60 @@ double Dstar::eightCondist(state a, state b) {
  */
 int Dstar::computeShortestPath() {
 
-  list<state> s;
-  list<state>::iterator i;
+    list<state> s;
+    list<state>::iterator i;
 
-  if (openList.empty()) return 1;
+    if (openList.empty()) return 1;
 
-  int k=0;
-  while ((!openList.empty()) &&
-         (openList.top() < (s_start = calculateKey(s_start))) ||
-         (getRHS(s_start) != getG(s_start))) {
+    int k=0;
+    while ((!openList.empty()) &&
+            (openList.top() < (s_start = calculateKey(s_start))) ||
+            (getRHS(s_start) != getG(s_start))) {
 
-    if (k++ > maxSteps) {
-      fprintf(stderr, "At maxsteps\n");
-      return -1;
+        if (k++ > maxSteps) {
+            fprintf(stderr, "At maxsteps\n");
+            return -1;
+        }
+
+
+        state u;
+
+        bool test = (getRHS(s_start) != getG(s_start));
+
+        // lazy remove
+        while(1) {
+            if (openList.empty()) return 1;
+            u = openList.top();
+            openList.pop();
+
+            if (!isValid(u)) continue;
+            if (!(u < s_start) && (!test)) return 2;
+            break;
+        }
+
+        ds_oh::iterator cur = openHash.find(u);
+        openHash.erase(cur);
+
+        state k_old = u;
+
+        if (k_old < calculateKey(u)) { // u is out of date
+            insert(u);
+        } else if (getG(u) > getRHS(u)) { // needs update (got better)
+            setG(u,getRHS(u));
+            getPred(u,s);
+            for (i=s.begin();i != s.end(); i++) {
+                updateVertex(*i);
+            }
+        } else {   // g <= rhs, state has got worse
+            setG(u,INFINITY);
+            getPred(u,s);
+            for (i=s.begin();i != s.end(); i++) {
+                updateVertex(*i);
+            }
+            updateVertex(u);
+        }
     }
-
-
-    state u;
-
-    bool test = (getRHS(s_start) != getG(s_start));
-
-    // lazy remove
-    while(1) {
-      if (openList.empty()) return 1;
-      u = openList.top();
-      openList.pop();
-
-      if (!isValid(u)) continue;
-      if (!(u < s_start) && (!test)) return 2;
-      break;
-    }
-
-    ds_oh::iterator cur = openHash.find(u);
-    openHash.erase(cur);
-
-    state k_old = u;
-
-    if (k_old < calculateKey(u)) { // u is out of date
-      insert(u);
-    } else if (getG(u) > getRHS(u)) { // needs update (got better)
-      setG(u,getRHS(u));
-      getPred(u,s);
-      for (i=s.begin();i != s.end(); i++) {
-        updateVertex(*i);
-      }
-    } else {   // g <= rhs, state has got worse
-      setG(u,INFINITY);
-      getPred(u,s);
-      for (i=s.begin();i != s.end(); i++) {
-        updateVertex(*i);
-      }
-      updateVertex(u);
-    }
-  }
-  return 0;
+    return 0;
 }
 
 /* bool Dstar::close(double x, double y)
@@ -264,8 +259,8 @@ int Dstar::computeShortestPath() {
  */
 bool Dstar::close(double x, double y) {
 
-  if (isinf(x) && isinf(y)) return true;
-  return (fabs(x-y) < 0.00001);
+    if (isinf(x) && isinf(y)) return true;
+    return (fabs(x-y) < 0.00001);
 
 }
 
@@ -437,7 +432,6 @@ void Dstar::updateCell(int x, int y, double val) {
 void Dstar::getSucc(state u,list<state> &s) {
   s.clear();
 
-  // 4?øΩﬂñT?øΩi?øΩ„â∫?øΩ?øΩ?øΩE?øΩj?øΩÕÇÔøΩ?øΩÃÇ‹Ç‹í«âÔøΩ
   const int dx4[4] = { 1, 0, -1, 0 };
   const int dy4[4] = { 0, 1,  0, -1 };
   for (int i = 0; i < 4; ++i) {
@@ -447,7 +441,6 @@ void Dstar::getSucc(state u,list<state> &s) {
     if (!occupied(v)) s.push_back(v);
   }
 
-  // ?øΩŒÇÔøΩ4?øΩ?øΩ?øΩ?øΩ?øΩF?øΩ?øΩ?øΩ?øΩ?øΩÃó◊ê⁄ÉZ?øΩ?øΩ?øΩ?øΩ?øΩ`?øΩF?øΩb?øΩN
   const int dx8[4] = {  1, -1, -1, 1 };
   const int dy8[4] = {  1,  1, -1,-1 };
   for (int i = 0; i < 4; ++i) {
@@ -455,7 +448,6 @@ void Dstar::getSucc(state u,list<state> &s) {
     v.x += dx8[i];
     v.y += dy8[i];
 
-    // ?øΩ`?øΩF?øΩb?øΩN?øΩ?øΩ?øΩ?øΩ 2 ?øΩ¬ÇÃíÔøΩ?øΩ?øΩ?øΩZ?øΩ?øΩ
     state side1 = u;
     side1.x += dx8[i];
     side1.y += 0;
@@ -641,93 +633,6 @@ bool Dstar::replan() {
   return true;
 }
 
-Pair Dstar::draw(float dRatio, Robot* blueRobots, Robot* yellowRobots) {
-
-  ds_ch::iterator iter;
-  ds_oh::iterator iter1;
-  state t;
-
-  list<state>::iterator iter2;
-
-  glBegin(GL_QUADS);
-  
-  for(iter=cellHash.begin(); iter != cellHash.end(); iter++) {
-    if (iter->second.cost == 1) glColor3f(0,1,0);
-    else if (iter->second.cost < 0 ) glColor3f(1,0,0);
-    else glColor3f(0,0,1);
-    drawCell(iter->first,0.45);
-  }
-
-  glColor3f(1,1,0);
-  drawCell(s_start,0.45);
-  glColor3f(1,0,1);
-  drawCell(s_goal,0.45);
-
-  for(iter1=openHash.begin(); iter1 != openHash.end(); iter1++) {
-    glColor3f(0.4,0,0.8);
-    drawCell(iter1->first, 0.2);
-  }
-
-
-  glEnd();
-
-  glLineWidth(4);
-  glBegin(GL_LINE_STRIP);
-  glColor3f(0.6, 0.1, 0.4);
-
-  for(iter2=path.begin(); iter2 != path.end(); iter2++) {
-    glVertex3f(iter2->x, iter2->y, 0.2);
-  }
-  std::vector<Coordinate> D_Star_Road;
-  for (auto &coord : path) {
-    D_Star_Road.push_back({static_cast<int>(coord.x * dRatio), static_cast<int>(coord.y * dRatio)});
-  }
-  Coordinate s_start_coord = {static_cast<int>(s_start.x * dRatio), static_cast<int>(s_start.y * dRatio)};
-  Coordinate s_goal_coord = {static_cast<int>(s_goal.x * dRatio), static_cast<int>(s_goal.y * dRatio)};
-  Bot_Model bot_model = {5000.0, 20, 4000.0, 50}; // 60 degrees in radians
-  // std::cout << "orientation: " << blueRobots[0].orientation << std::endl;
-  float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
-  // std::cout << "velocity: " << velocity << std::endl;
-  // std::cout << "angularVelocity: " << blueRobots[0].angularVelocity << std::endl;
-  DWAPlanner dwaPlanner;
-  Pair pair = {};
-  // Pair pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
-  // calculate fps
-  // std::cout << "DWA Planner: " << pair.Target_Velocity << ", " << pair.Target_Angular_Velocity << std::endl;
-  // std::cout << "pre_x: " << blueRobots[0].pre_x << ", pre_y: " << blueRobots[0].pre_y << std::endl;
-  // std::cout << "Robot Position: (" << blueRobots[0].x << ", " << blueRobots[0].y << ")" << std::endl;
-  // std::cout << "velocity: " << blueRobots[0].velocity.x << ", " << blueRobots[0].velocity.y << std::endl;
-  // std::cout << "Robot Velocity: " << velocity << ", Robot Angular Velocity: " << blueRobots[0].angularVelocity << std::endl;
-
-  // glEnd();
-
-
-  // auto currentTime = high_resolution_clock::now();
-  // duration<float> elapsed = currentTime - beforeTime;
-  // beforeTime = currentTime;
-  // printf("Dstar::draw() took %f seconds\n", elapsed.count());
-
-  return pair;
-}
-
-
-void Dstar::drawCell(state s, float size) {
-
-  float x = s.x;
-  float y = s.y;
-
-  // std::cout << "Drawing cell at: " << x << ", " << y << std::endl;
-
-  size = 0.5;
-  glVertex2f(x - size, y - size);
-  glVertex2f(x + size, y - size);
-  glVertex2f(x + size, y + size);
-  glVertex2f(x - size, y + size);
-
-
-}
-
-
 void Dstar::addCircularObstacle(int cx, int cy, int outerRadius, int innerRadius) {
     // for (int x = cx - outerRadius; x <= cx + outerRadius; ++x) {
     //     for (int y = cy - outerRadius; y <= cy + outerRadius; ++y) {
@@ -754,7 +659,6 @@ void Dstar::addCircularObstacle(int cx, int cy, int outerRadius, int innerRadius
 }
 
 void Dstar::addFieldObstacle() {
-    float dRatio = 75.0;
     for (int i = -(6700 / dRatio); i < (6700 / dRatio); i++) {
       updateCell(i, 5200 / dRatio, -1);
       updateCell(i, -5200 / dRatio, -1);
@@ -783,8 +687,9 @@ void Dstar::update(Robot* blueRobots, Robot* yellowRobots) {
 
 void Dstar::run()
 {
+    init(static_cast<int>(blueRobots[0].x / dRatio), static_cast<int>(blueRobots[0].y / dRatio), 0, 0, dRatio);
     while (running_) {
-        float dRatio = 75.0;
+    
         resetMap();
         updateStart(static_cast<int>(blueRobots[0].x / dRatio), static_cast<int>(blueRobots[0].y / dRatio));
         for (int i = 0; i < 11; ++i) {
@@ -798,17 +703,6 @@ void Dstar::run()
         }
         addFieldObstacle();
         replan();
-        std::vector<Coordinate> D_Star_Road;
-        for (auto &coord : path) {
-          D_Star_Road.push_back({static_cast<int>(coord.x * dRatio), static_cast<int>(coord.y * dRatio)});
-        }
-        Coordinate s_start_coord = {static_cast<int>(s_start.x * dRatio), static_cast<int>(s_start.y * dRatio)};
-        Coordinate s_goal_coord = {static_cast<int>(s_goal.x * dRatio), static_cast<int>(s_goal.y * dRatio)};
-        Bot_Model bot_model = {5000.0, 20, 4000.0, 50}; // 60 degrees in radians
-        float velocity = sqrt(blueRobots[0].velocity.x * blueRobots[0].velocity.x + blueRobots[0].velocity.y * blueRobots[0].velocity.y);
-        _pair = dwaPlanner.DWA(D_Star_Road, s_start_coord, blueRobots[0].orientation, velocity, blueRobots[0].angularVelocity, s_goal_coord, bot_model, blueRobots, yellowRobots);
-        // std::cout << "Robot velocity: " << velocity << ", Angular Velocity: " << blueRobots[0].angularVelocity << std::endl;
-        std::cout << blueRobots[0].x << ", " << blueRobots[0].y << std::endl;/*  */
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }

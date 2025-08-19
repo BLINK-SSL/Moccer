@@ -270,22 +270,22 @@ bool Dstar::close(double x, double y) {
  */
 void Dstar::updateVertex(state u) {
 
-  list<state> s;
-  list<state>::iterator i;
+    list<state> s;
+    list<state>::iterator i;
 
-  if (u != s_goal) {
+    if (u != s_goal) {
     getSucc(u,s);
     double tmp = INFINITY;
     double tmp2;
 
     for (i=s.begin();i != s.end(); i++) {
-      tmp2 = getG(*i) + cost(u,*i);
-      if (tmp2 < tmp) tmp = tmp2;
+        tmp2 = getG(*i) + cost(u,*i);
+        if (tmp2 < tmp) tmp = tmp2;
     }
     if (!close(getRHS(u),tmp)) setRHS(u,tmp);
-  }
+    }
 
-  if (!close(getG(u),getRHS(u))) insert(u);
+    if (!close(getG(u),getRHS(u))) insert(u);
 
 }
 

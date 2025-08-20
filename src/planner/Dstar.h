@@ -15,55 +15,14 @@
 #include <list>
 #include <stdio.h>
 #include <ext/hash_map>
+#include <yaml-cpp/yaml.h>
 
-#ifdef MACOS
-#include <GLUT/glut.h>
-#else
-// #include <GL/glut.h>
-// #include <GL/gl.h>
-// #include <GL/glu.h>
-#endif
-
-#include "DWA.h"
+#include "../models/state.h"
 #include "../models/robot.h"
 
 using namespace std;
 using namespace __gnu_cxx;
 
-class state {
-public:
-    int x;
-    int y;
-    pair<double,double> k;
-
-    bool operator == (const state &s2) const {
-        return ((x == s2.x) && (y == s2.y));
-    }
-
-    bool operator != (const state &s2) const {
-        return ((x != s2.x) || (y != s2.y));
-    }
-
-    bool operator > (const state &s2) const {
-        if (k.first-0.00001 > s2.k.first) return true;
-        else if (k.first < s2.k.first-0.00001) return false;
-        return k.second > s2.k.second;
-    }
-
-    bool operator <= (const state &s2) const {
-        if (k.first < s2.k.first) return true;
-        else if (k.first > s2.k.first) return false;
-        return k.second < s2.k.second + 0.00001;
-    }
-
-
-    bool operator < (const state &s2) const {
-        if (k.first + 0.000001 < s2.k.first) return true;
-        else if (k.first - 0.000001 > s2.k.first) return false;
-        return k.second < s2.k.second;
-    }
-
-};
 
 struct ipoint2 {
     int x,y;
@@ -94,29 +53,28 @@ class Dstar {
 
 public:
 
-    Dstar();
+    Dstar(const YAML::Node& config);
     ~Dstar();
-    void   init(int sX, int sY, int gX, int gY, int dRatio);
-    void   updateCell(int x, int y, double val);
-    void   updateStart(int x, int y);
-    void   updateGoal(int x, int y);
-    bool   replan();
-    Pair   draw(float dRatio, Robot* blueRobots, Robot* yellowRobots);
-    void   drawCell(state s,float z);
-    void   addCircularObstacle(int cx, int cy, int outerRadius, int innerRadius);
+    void   init(float sX, float sY, float gX, float gY);
+    void   updateCell(float x, float y, double val);
+    void   updateStart(float x, float y);
+    void   updateGoal(float x, float y);
+    bool   replan(int id);
+    void   addCircularObstacle(float cx, float cy, float outerRadius, float innerRadius);
     void   addFieldObstacle();
     void   resetMap();
     void   start();
     void   stop();
-    void   update(Robot* blueRobots, Robot* yellowRobots);
+    void   update(Robot* ourRobots, Robot* enemyRobots);
     void   run();
-    Pair   getPair();
 
-    list<state> getPath();
+    list<state>* getPlans();
 
 private:
 
-    list<state> path;
+    const YAML::Node& conf;
+
+    list<state> plans[16];
 
     double C1;
     double k_m;
@@ -161,13 +119,12 @@ private:
     bool running_;
     std::thread dstarThread_;
 
-    Robot blueRobots[16];
-    Robot yellowRobots[16];
-    Pair _pair;
+    Robot ourRobots[16];
+    Robot enemyRobots[16];
 };
 
 struct RobotState {
-    float x, y, theta; // 座標と向き??��?��ラジアン??��?
+    float x, y, theta; // 座標と向き???��?��??��?��ラジアン???��?��?
     float v, w;        // 線速度と角速度
 };
 

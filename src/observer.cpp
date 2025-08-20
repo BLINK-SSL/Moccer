@@ -1,35 +1,31 @@
 #include "observer.h"
 
-Observer::Observer() : sender(), receiver(), dstar()
-{
+Observer::Observer(const YAML::Node& config) : conf(config), sender(config), receiver(config), dstar(config), dwa(config) {
     receiver.start();
     dstar.start();
-    preBlueRobots = new Robot[16];
-    preYellowRobots = new Robot[16];
-    for (int i = 0; i < 16; ++i) {
-        preBlueRobots[i] = Robot();
-        preYellowRobots[i] = Robot();
-    }
+    dwa.start();
 }
 
-Observer::~Observer() 
-{
+Observer::~Observer() {
     receiver.stop();
+    dstar.stop();
+    dwa.stop();
 }
 
 void Observer::waitForReceiver() {
     while (!receiver.isNewWorld);
     receiver.isNewWorld = false;
 }
-void Observer::update()
-{
+
+void Observer::update() {
     waitForReceiver();
 
-    blueRobots = receiver.getBlueRobots();
-    yellowRobots = receiver.getYellowRobots();
+    ourRobots = receiver.getOurRobots();
+    enemyRobots = receiver.getEnemyRobots();
 
-    dstar.update(blueRobots, yellowRobots);
-    Pair pair = dstar.getPair();
-    // std::cout << "Target Velocity: " << pair.Target_Velocity << ", Target Angular Velocity: " << pair.Target_Angular_Velocity << std::endl;
-    sender.send(false, pair.Target_Velocity, pair.Target_Angular_Velocity, blueRobots[0].orientation);
+    dstar.update(ourRobots, enemyRobots);
+
+    dstarPlans = dstar.getPlans();
+
+    dwa.update(ourRobots, enemyRobots, dstarPlans);
 }

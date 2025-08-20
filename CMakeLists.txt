@@ -54,19 +54,21 @@ set(NET_DIR ${SRC_DIR}/networks)
 file(GLOB MAIN_SOURCES ${SRC_DIR}/*.cpp)
 file(GLOB MODEL_SOURCES ${MODEL_DIR}/*.cpp)
 file(GLOB NET_SOURCES ${NET_DIR}/*.cpp)
-file(GLOB FINDER_SOURCES ${SRC_DIR}/finder/*.cpp)
+file(GLOB FINDER_SOURCES ${SRC_DIR}/planner/*.cpp)
 
 # file(GLOB HEADERS ${SRC_DIR}/*.h)
 # file(GLOB MODEL_HEADERS ${MODEL_DIR}/*.h)
 # file(GLOB NET_HEADERS ${NET_DIR}/*.h)
 
 find_package(Eigen3 REQUIRED)
-
-find_package(OpenGL REQUIRED)
-find_package(GLUT REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # Compile Protobuf files
 file(GLOB PROTO_FILES "${PROTOBUF_SOURCE_DIR}/*.proto")
+
+# Yaml files
+file(GLOB YAML_FILES "${CMAKE_SOURCE_DIR}/config/*.yaml")
+
 protobuf_generate_cpp(
     PROTO_SRCS 
     PROTO_HDRS 
@@ -80,6 +82,7 @@ protobuf_generate_cpp(
 # Source files
 set(SOURCES
     ${PROTO_SRCS}
+    ${YAML_FILES}
     ${MAIN_SOURCES}
     ${MODEL_SOURCES}
     ${NET_SOURCES}
@@ -97,12 +100,7 @@ target_link_libraries(Moccer
     ${Protobuf_LIBRARIES}
     Eigen3::Eigen
     Threads::Threads
-    # GL
-    # GLU
-    # glut
-    OpenGL::GL
-    OpenGL::GLU
-    GLUT::GLUT
+    yaml-cpp
 )
 
 

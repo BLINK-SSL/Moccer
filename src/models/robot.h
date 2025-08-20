@@ -2,13 +2,10 @@
 #pragma once
 
 #include <cmath>
+#include <eigen3/Eigen/Dense>
 #include "ssl_vision_detection.pb.h"
 
 using namespace std;
-
-struct Point {
-    float x, y;
-};
 
 class Robot {
 public:
@@ -24,8 +21,10 @@ public:
     float pixelY;
     float height;
 
-    Point velocity;
-    float vel;
+    bool active;
+    Eigen::Vector2d pos;
+    Eigen::Vector2d vel;
+    float velocity;
     float angularVelocity;
     float pre_x;
     float pre_y;

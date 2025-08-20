@@ -1,0 +1,32 @@
+General:
+  Color: "blue"
+  MaxRobotCount: 11
+
+# Planner Configuration
+Planner:
+  dRatio: 75
+  SafeDistance: 200.0
+  Obstacle: 0.5
+  Goal: -1
+  Velocity: 1.0
+  D_Star: 0
+
+  Delta: 0.01
+  PredictDelta: 0.1
+  VelocityAccuracy: 100
+
+# Network Configuration
+Network:
+  Vision:
+    Address: "224.5.23.2"
+    Port: 10694
+  Simulation:
+    Address: "224.5.23.2"
+    Port: 20694
+
+# Robot Configuration
+Robot:
+  MaxVelocity: 3000
+  MaxAngularVelocity: 1.0
+  MaxVelocityAcceleration: 1000
+  MaxAngularAcceleration: 0.5

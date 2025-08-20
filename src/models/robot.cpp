@@ -9,12 +9,14 @@ Robot::Robot()
       pixelX(0.0),
       pixelY(0.0),
       height(0.0),
-      velocity({0.0, 0.0}),
-      vel(0.0),
+      pos({0.0, 0.0}),
+      vel({0.0, 0.0}),
+      velocity(0.0),
       angularVelocity(0.0),
       pre_x(0.0),
       pre_y(0.0),
-      pre_orientation(0.0) {
+      pre_orientation(0.0),
+      active(false) {
 }
 
 void Robot::update(SSL_DetectionRobot robot, float deltaTime) {
@@ -27,17 +29,19 @@ void Robot::update(SSL_DetectionRobot robot, float deltaTime) {
     if (robot.has_orientation()) orientation = robot.orientation();
     if (robot.has_height()) height = robot.height();
 
+    active = (robot.x() != 0 && robot.y() != 0);
+
     if (deltaTime <= 0) {
         return;
     }
     if (robot.x() - pre_x != 0) {
-        velocity.x = (robot.x() - pre_x) / deltaTime;
+        vel.x() = (robot.x() - pre_x) / deltaTime;
     }
     if (robot.y() - pre_y != 0) {
-        velocity.y = (robot.y() - pre_y) / deltaTime;
+        vel.y() = (robot.y() - pre_y) / deltaTime;
     }
 
-    vel = sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+    velocity = sqrt(vel.x() * vel.x() + vel.y() * vel.y());
     angularVelocity = (robot.orientation() - pre_orientation) / deltaTime;
     pre_x = robot.x();
     pre_y = robot.y();

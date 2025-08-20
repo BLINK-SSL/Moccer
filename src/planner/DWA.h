@@ -6,22 +6,14 @@
 #include <algorithm>
 #include <thread>
 #include <atomic>
+#include <yaml-cpp/yaml.h>
 
+#include "../models/state.h"
 #include "../models/robot.h"
 
 using namespace std;
 
-#define Delta 0.01
-#define Predict_Delta 0.1
-#define Velocity_Accuracy 100
-#define Angular_Velocity_Accuracy 1
-#define One_Block 1.0
-#define Safe_Distance 200.0
-#define Alpha 0.5 //Obstacle
-#define Beta (-1) //Goal
-#define Gamma 1.0 //Velocity
 #define INT_MAX 1000000
-#define Delta2 (0) //Dist_To_D_Star
 
 class Bot_Model {
 public:
@@ -56,9 +48,10 @@ public:
 
 class DWA {
 public:
-    DWA(float _dRatio);
+    DWA(const YAML::Node& config);
     ~DWA();
 
+    void update(Robot* ourRobots, Robot* enemyRobots, list<state>* dstarPlans);
     void start();
     void stop();
 
@@ -107,11 +100,25 @@ public:
     void Refresh_Programme() {
         Obstacle_Set.clear();
         Ok_List.clear();
+
+        MIN_Dist_To_Obstacle = 1e100;
+        MAX_Dist_To_Obstacle = -10;
+        MIN_Dist_To_Goal = 1e100;
+        MAX_Dist_To_Goal = -10;
+        MIN_Velocity = 1e100;
+        MAX_Velocity = -1e100;
+        MIN_Angular_Velocity = 1e100;
+        MAX_Angular_Velocity = -1e100;
+        MIN_Dist_To_D_Star = 1e100;
+        MAX_Dist_To_D_Star = -10;
     }
 
     void run();
+    void trajectory(list<state> dstarPlan, Robot bot);
 
 private:
+    const YAML::Node& conf;
+
     vector<Coordinate> Obstacle_Set;
     vector<Node> Ok_List;
     vector<Coordinate> Trajectory;
@@ -119,4 +126,29 @@ private:
     std::thread dwaThread_;
     std::atomic<bool> running_;
     float dRatio;
+
+    int maxRobotCount;
+    Robot ourRobots[16];
+    Robot enemyRobots[16];
+    list<state> dstarPlans[16];
+
+    double MIN_Dist_To_Obstacle;
+    double MAX_Dist_To_Obstacle;
+    double MIN_Dist_To_Goal;
+    double MAX_Dist_To_Goal;
+    double MIN_Velocity;
+    double MAX_Velocity;
+    double MIN_Angular_Velocity;
+    double MAX_Angular_Velocity;
+    double MIN_Dist_To_D_Star;
+    double MAX_Dist_To_D_Star;
+
+    float maxVelocity;
+    float maxVelocityAcc;
+    float velocityAccuracy;
+
+    float delta;
+    float predictDelta;
+
+    int One_Block;
 };

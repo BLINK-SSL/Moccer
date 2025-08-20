@@ -6,6 +6,7 @@
 #include <boost/asio.hpp>
 #include <thread>
 #include <atomic>
+#include <yaml-cpp/yaml.h>
 
 #include "../models/robot.h"
 #include "mocSim_Commands.pb.h"
@@ -61,7 +62,7 @@ private:
 
 class Receiver {
 public:
-    Receiver();
+    Receiver(const YAML::Node& config);
     ~Receiver();
 
     void start();
@@ -69,21 +70,23 @@ public:
 
     SSL_WrapperPacket getLatestPacket();
 
-    Robot* getBlueRobots();
-    Robot* getYellowRobots();
+    Robot* getOurRobots();
+    Robot* getEnemyRobots();
 
     double tCapture;
     double tSent;
     double tCapturePre;
     double fps;
 
-    std::mutex blueRobotMutex;
-    std::mutex yellowRobotMutex;
+    std::mutex ourRobotMutex;
+    std::mutex enemyRobotMutex;
     
     bool isNewWorld = false;
 
 private:
     void receiveLoop(); 
+
+    const YAML::Node& conf;
 
     boost::asio::io_context ioContext_;
     boost::asio::ip::udp::socket socket_;
@@ -92,8 +95,8 @@ private:
     std::thread recvThread_;
     std::atomic<bool> running_;
 
-    Robot blueRobot[16];
-    Robot yellowRobot[16];
+    Robot ourRobot[16];
+    Robot enemyRobot[16];
 
     FpsCounter fpsCounter;
     uint32_t preFrameNumber = 0;

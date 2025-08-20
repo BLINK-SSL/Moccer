@@ -3,9 +3,10 @@
 #include "receiver.h"
 
 
-Receiver::Receiver()
+Receiver::Receiver(const YAML::Node& config)
     : socket_(ioContext_),
-      endpoint_(boost::asio::ip::make_address("224.5.23.2"), 10694),
+      endpoint_(boost::asio::ip::make_address(config["Network"]["Vision"]["Address"].as<std::string>()), config["Network"]["Vision"]["Port"].as<uint16_t>()),
+      conf(config),
       running_(false) {
 
     socket_.open(boost::asio::ip::udp::v4());
@@ -13,11 +14,11 @@ Receiver::Receiver()
     socket_.bind(endpoint_);
     
     socket_.set_option(boost::asio::ip::multicast::join_group(
-        boost::asio::ip::make_address("224.5.23.2")));
+        boost::asio::ip::make_address(config["Network"]["Vision"]["Address"].as<std::string>())));
     
     for (int i = 0; i < 16; ++i) {
-        blueRobot[i] = Robot();
-        yellowRobot[i] = Robot();
+        ourRobot[i] = Robot();
+        enemyRobot[i] = Robot();
     }
     fpsCounter.start();
     isNewWorld = false;
@@ -59,15 +60,27 @@ void Receiver::receiveLoop() {
                 }
 
                 {
-                    std::lock_guard<std::mutex> lock(blueRobotMutex);
-                    for (const auto& robot : detection.robots_blue()) {
-                        blueRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
+                    std::lock_guard<std::mutex> lock(ourRobotMutex);
+                    if (conf["General"]["Color"].as<std::string>() == "blue") {
+                        for (const auto& robot : detection.robots_blue()) {
+                            ourRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
+                        }
+                    } else {
+                        for (const auto& robot : detection.robots_yellow()) {
+                            ourRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
+                        }
                     }
                 }
                 {
-                    std::lock_guard<std::mutex> lock(yellowRobotMutex);
-                    for (const auto& robot : detection.robots_yellow()) {
-                        yellowRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
+                    std::lock_guard<std::mutex> lock(enemyRobotMutex);
+                    if (conf["General"]["Color"].as<std::string>() == "blue") {
+                        for (const auto& robot : detection.robots_yellow()) {
+                            enemyRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
+                        }
+                    } else {
+                        for (const auto& robot : detection.robots_blue()) {
+                            enemyRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
+                        }
                     }
                 }
             } else {
@@ -81,12 +94,12 @@ void Receiver::receiveLoop() {
     }
 }
 
-Robot* Receiver::getBlueRobots() {
-    std::lock_guard<std::mutex> lock(blueRobotMutex);
-    return blueRobot;
+Robot* Receiver::getOurRobots() {
+    std::lock_guard<std::mutex> lock(ourRobotMutex);
+    return ourRobot;
 }
 
-Robot* Receiver::getYellowRobots() {
-    std::lock_guard<std::mutex> lock(yellowRobotMutex);
-    return yellowRobot;
+Robot* Receiver::getEnemyRobots() {
+    std::lock_guard<std::mutex> lock(enemyRobotMutex);
+    return enemyRobot;
 }

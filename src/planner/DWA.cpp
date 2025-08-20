@@ -61,11 +61,11 @@ bool DWA::Get_Trajectory(Coordinate Car_Coordinate, double Now_Velocity, double 
         Car_x += Now_Velocity * cos(Next_Angle) * delta;
         Car_y += Now_Velocity * sin(Next_Angle) * delta;
         Now_Angle = Next_Angle;
-        if (Legal_Coordinate({static_cast<int>(lround(Car_x / One_Block)), static_cast<int>(lround(Car_y / One_Block))})) {
+        if (Legal_Coordinate({roundf(Car_x / One_Block), roundf(Car_y / One_Block)})) {
             // std::cout << "Time: " << Time_Sum
             //           << ", Car position: " << lround(Car_x / One_Block) << ", " << lround(Car_y / One_Block) << std::endl;
             // std::cout << "Adding trajectory point: " << lround(Car_x / One_Block) << ", " << lround(Car_y / One_Block) << std::endl;
-            Trajectory.push_back({static_cast<int>(Car_x / One_Block), static_cast<int>(Car_y / One_Block)});
+            Trajectory.push_back({static_cast<float>(Car_x / One_Block), static_cast<float>(Car_y / One_Block)});
         } else {
             // return false;
         }

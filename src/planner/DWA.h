@@ -31,8 +31,8 @@ public:
 
 class Coordinate {
 public:
-    int x;
-    int y;
+    float x;
+    float y;
 };
 
 class Node {

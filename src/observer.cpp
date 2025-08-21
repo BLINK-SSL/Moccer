@@ -24,8 +24,10 @@ void Observer::update() {
     enemyRobots = receiver.getEnemyRobots();
 
     dstar.update(ourRobots, enemyRobots);
-
     dstarPlans = dstar.getPlans();
 
     dwa.update(ourRobots, enemyRobots, dstarPlans);
+    dwaPlans = dwa.getDwa();
+
+    sender.send(false, dwaPlans);
 }

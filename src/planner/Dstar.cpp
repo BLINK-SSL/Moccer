@@ -17,6 +17,11 @@ Dstar::Dstar(const YAML::Node& config) : conf(config), running_(false) {
     maxSteps = 80000;  // node expansions before we give up
     C1       = 1;      // cost of an unseen cell
     dRatio   = conf["Planner"]["dRatio"].as<float>();
+
+    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
+        plans[i] = list<state>();
+        plans[i].push_back({0, 0});
+    }
 }
 
 Dstar::~Dstar() {
@@ -584,7 +589,6 @@ bool Dstar::replan(int id) {
     }
 
     while(cur != s_goal) {
-
         plans[id].push_back(cur);
         getSucc(cur, n);
 
@@ -619,6 +623,9 @@ bool Dstar::replan(int id) {
         cur = smin;
     }
     plans[id].push_back(s_goal);
+    
+    tmpPlans[id] = plans[id];
+    
     return true;
 }
 
@@ -678,8 +685,15 @@ void Dstar::update(Robot* ourRobots, Robot* enemyRobots) {
     }
 }
 
-list<state>* Dstar::getPlans() {
-    return plans;
+vector<Eigen::Vector2d>* Dstar::getPlans() {
+    std::lock_guard<std::mutex> lock(plansMutex);
+    vector<Eigen::Vector2d> newPlans[conf["General"]["MaxRobotCount"].as<int>()];
+    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
+        for (auto &p : tmpPlans[i]) {
+            newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));
+        }
+    }
+    return newPlans;
 }
 
 void Dstar::run() {

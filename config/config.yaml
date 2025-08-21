@@ -1,6 +1,6 @@
 General:
   Color: "blue"
-  MaxRobotCount: 11
+  MaxRobotCount: 1
 
 # Planner Configuration
 Planner:

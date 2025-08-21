@@ -18,7 +18,8 @@ void Sender::send(bool is_yellow, RobotCmd* cmds) {
     mocSim_Commands commands;
     commands.set_timestamp(1234567890);
     commands.set_isteamyellow(is_yellow);
-    for (int i = 0; i < sizeof(cmds) / sizeof(cmds[0]); i++) {
+    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
+        // std::cout << "vel: " << cmds[i].vel.x() << ", " << cmds[i].vel.y() << ", " << cmds[i].angVel << std::endl;
         auto* command = commands.add_robot_commands();
         command->set_id(cmds[i].id);
         command->set_kickspeedx(cmds[i].kickPow);

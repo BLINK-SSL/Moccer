@@ -23,6 +23,7 @@ public:
 
     bool active;
     Eigen::Vector2d pos;
+    Eigen::Vector2d dest;
     Eigen::Vector2d vel;
     float velocity;
     float angularVelocity;

@@ -68,13 +68,14 @@ public:
     void   update(Robot* ourRobots, Robot* enemyRobots);
     void   run();
 
-    list<state>* getPlans();
+    vector<Eigen::Vector2d>* getPlans();
 
 private:
 
     const YAML::Node& conf;
 
     list<state> plans[16];
+    list<state> tmpPlans[16];
 
     double C1;
     double k_m;
@@ -118,19 +119,20 @@ private:
 
     bool running_;
     std::thread dstarThread_;
+    std::mutex plansMutex;
 
     Robot ourRobots[16];
     Robot enemyRobots[16];
 };
 
 struct RobotState {
-    float x, y, theta; // åº§æ¨™ã¨å‘ã???¿½?¿½??¿½?¿½ãƒ©ã‚¸ã‚¢ãƒ³???¿½?¿½?
-    float v, w;        // ç·šé€Ÿåº¦ã¨è§’é€Ÿåº¦
+    float x, y, theta;
+    float v, w;       
 };
 
 struct VelocityCommand {
-    float v; // ç·šé€Ÿåº¦
-    float w; // è§’é€Ÿåº¦
+    float v;
+    float w;
 };
 
 

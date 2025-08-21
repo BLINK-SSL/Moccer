@@ -10,6 +10,7 @@
 
 #include "../models/state.h"
 #include "../models/robot.h"
+#include "../models/cmd.h"
 
 using namespace std;
 
@@ -29,12 +30,6 @@ public:
     double Target_Angular_Velocity;
 };
 
-class Coordinate {
-public:
-    float x;
-    float y;
-};
-
 class Node {
 public:
     double Dist_To_Obstacle;
@@ -51,11 +46,11 @@ public:
     DWA(const YAML::Node& config);
     ~DWA();
 
-    void update(Robot* ourRobots, Robot* enemyRobots, list<state>* dstarPlans);
+    void update(Robot* ourRobots, Robot* enemyRobots, vector<Eigen::Vector2d>* dstarPlans);
     void start();
     void stop();
 
-    bool Get_Trajectory(Coordinate Car_Coordinate, double Now_Velocity, double Now_Angle, double Now_Angular_Velocity);
+    bool Get_Trajectory(Robot bot);
     double Get_Dist_To_Obstacle();
 
     double MIN(double a, double b) {
@@ -66,27 +61,27 @@ public:
         return a < b ? b : a;
     }
 
-    double Calc_Dist(Coordinate a, Coordinate b) {
-        return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
+    double Calc_Dist(Eigen::Vector2d a, Eigen::Vector2d b) {
+        return sqrt(pow(a.x() - b.x(), 2) + pow(a.y() - b.y(), 2));
     }
 
-    bool Legal_Coordinate(Coordinate x) {
+    bool Legal_Vector2d(Eigen::Vector2d x) {
         return true;
     }
 
-    double Get_Dist_To_Goal(Coordinate Car_Destination) {
+    double Get_Dist_To_Goal(Eigen::Vector2d Car_Destination) {
         return Calc_Dist(Trajectory[Trajectory.size() - 1], Car_Destination);
     }
 
-    int Get_H(Coordinate Left, Coordinate Right) {
-        return abs(Left.x - Right.x) + abs(Left.y - Right.y);
+    int Get_H(Eigen::Vector2d Left, Eigen::Vector2d Right) {
+        return abs(Left.x() - Right.x()) + abs(Left.y() - Right.y());
     }
 
-    static bool cmp(Coordinate a, Coordinate b) {
-        return a.x < b.x;
+    static bool cmp(Eigen::Vector2d a, Eigen::Vector2d b) {
+        return a.x() < b.x();
     }
 
-    double Get_D_Star_Dist(std::vector<Coordinate> D_Star_Road, Coordinate End_Road) {
+    double Get_D_Star_Dist(std::vector<Eigen::Vector2d> D_Star_Road, Eigen::Vector2d End_Road) {
         double Dist = INT_MAX;
         for (auto &i: D_Star_Road) {
             double Temp = Get_H(End_Road, i);
@@ -114,14 +109,17 @@ public:
     }
 
     void run();
-    void trajectory(list<state> dstarPlan, Robot bot);
+    void trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot);
+
+    RobotCmd* getDwa();
 
 private:
+    std::mutex dwaMutex;
     const YAML::Node& conf;
 
-    vector<Coordinate> Obstacle_Set;
+    vector<Eigen::Vector2d> Obstacle_Set;
     vector<Node> Ok_List;
-    vector<Coordinate> Trajectory;
+    vector<Eigen::Vector2d> Trajectory;
 
     std::thread dwaThread_;
     std::atomic<bool> running_;
@@ -130,7 +128,8 @@ private:
     int maxRobotCount;
     Robot ourRobots[16];
     Robot enemyRobots[16];
-    list<state> dstarPlans[16];
+    RobotCmd robotCmds[16];
+    vector<Eigen::Vector2d> dstarPlans[16];
 
     double MIN_Dist_To_Obstacle;
     double MAX_Dist_To_Obstacle;
@@ -151,4 +150,8 @@ private:
     float predictDelta;
 
     int One_Block;
+
+    float Goal;
+    float Velocity;
+    float D_Star;
 };

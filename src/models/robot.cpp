@@ -10,6 +10,7 @@ Robot::Robot()
       pixelY(0.0),
       height(0.0),
       pos({0.0, 0.0}),
+      dest({0.0, 0.0}),
       vel({0.0, 0.0}),
       velocity(0.0),
       angularVelocity(0.0),

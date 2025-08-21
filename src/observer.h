@@ -28,7 +28,8 @@ class Observer {
         Robot* ourRobots;
         Robot* enemyRobots;
 
-        list<state>* dstarPlans;
+        std::vector<Eigen::Vector2d>* dstarPlans;
+        RobotCmd* dwaPlans;
 };
 
 #endif // OBSERVER_H

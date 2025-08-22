@@ -35,9 +35,7 @@ public:
     double Dist_To_Obstacle;
     double Dist_To_Goal;
     double Velocity;
-    double Angular_Velocity;
     double VELOCITY;
-    double ANGULAR_VELOCITY;
     double Dist_To_D_Star;
 };
 
@@ -50,7 +48,7 @@ public:
     void start();
     void stop();
 
-    bool Get_Trajectory(Robot bot);
+    bool Get_Trajectory(Robot bot, double Velocity);
     double Get_Dist_To_Obstacle();
 
     double MIN(double a, double b) {
@@ -93,7 +91,6 @@ public:
     }
 
     void Refresh_Programme() {
-        Obstacle_Set.clear();
         Ok_List.clear();
 
         MIN_Dist_To_Obstacle = 1e100;

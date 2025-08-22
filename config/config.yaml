@@ -7,8 +7,8 @@ Planner:
   dRatio: 75
   SafeDistance: 200.0
   Obstacle: 0.5
-  Goal: -1
-  Velocity: 1.0
+  Goal: 1
+  Velocity: 0.5
   D_Star: 0
 
   Delta: 0.01
@@ -21,12 +21,12 @@ Network:
     Address: "224.5.23.2"
     Port: 10694
   Simulation:
-    Address: "224.5.23.2"
+    Address: "127.0.0.1"
     Port: 20694
 
 # Robot Configuration
 Robot:
-  MaxVelocity: 3000
+  MaxVelocity: 2000
   MaxAngularVelocity: 1.0
-  MaxVelocityAcceleration: 1000
+  MaxVelocityAcceleration: 1500
   MaxAngularAcceleration: 0.5

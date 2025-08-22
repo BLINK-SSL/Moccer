@@ -19,13 +19,12 @@ void Sender::send(bool is_yellow, RobotCmd* cmds) {
     commands.set_timestamp(1234567890);
     commands.set_isteamyellow(is_yellow);
     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
-        // std::cout << "vel: " << cmds[i].vel.x() << ", " << cmds[i].vel.y() << ", " << cmds[i].angVel << std::endl;
         auto* command = commands.add_robot_commands();
         command->set_id(cmds[i].id);
         command->set_kickspeedx(cmds[i].kickPow);
         command->set_kickspeedz(cmds[i].chipKickPow);
-        command->set_veltangent(cmds[i].vel.x());
-        command->set_velnormal(cmds[i].vel.y());
+        command->set_veltangent(cmds[i].vel.x()/1000);
+        command->set_velnormal(cmds[i].vel.y()/1000);
         command->set_velangular(cmds[i].angVel);
         command->set_spinner(false);
         command->set_wheelsspeed(false);

@@ -3,8 +3,6 @@
 Robot::Robot()
     : confidence(0.0),
       robotId(0),
-      x(0.0),
-      y(0.0),
       orientation(0.0),
       pixelX(0.0),
       pixelY(0.0),
@@ -14,16 +12,15 @@ Robot::Robot()
       vel({0.0, 0.0}),
       velocity(0.0),
       angularVelocity(0.0),
-      pre_x(0.0),
-      pre_y(0.0),
-      pre_orientation(0.0),
+      prePos({0.0, 0.0}),
+      preOrientation(0.0),
       active(false) {
 }
 
 void Robot::update(SSL_DetectionRobot robot, float deltaTime) {
     confidence = robot.confidence();
-    x = robot.x();
-    y = robot.y();
+    pos.x() = robot.x();
+    pos.y() = robot.y();
     pixelX = robot.pixel_x();
     pixelY = robot.pixel_y();
     if (robot.has_robot_id()) robotId = robot.robot_id();
@@ -35,18 +32,20 @@ void Robot::update(SSL_DetectionRobot robot, float deltaTime) {
     if (deltaTime <= 0) {
         return;
     }
-    if (robot.x() - pre_x != 0) {
-        vel.x() = (robot.x() - pre_x) / deltaTime;
+    if (robot.x() - prePos.x() != 0) {
+        vel.x() = (robot.x() - prePos.x()) / deltaTime;
+    } else {
+        pos.x() -= DECREASE_VALUE;
     }
-    if (robot.y() - pre_y != 0) {
-        vel.y() = (robot.y() - pre_y) / deltaTime;
+    if (robot.y() - prePos.y() != 0) {
+        vel.y() = (robot.y() - prePos.y()) / deltaTime;
+    } else {
+        pos.y() -= DECREASE_VALUE;
     }
 
     velocity = sqrt(vel.x() * vel.x() + vel.y() * vel.y());
-    angularVelocity = (robot.orientation() - pre_orientation) / deltaTime;
-    pre_x = robot.x();
-    pre_y = robot.y();
-    pre_orientation = robot.orientation();
+    angularVelocity = (robot.orientation() - preOrientation) / deltaTime;
+    prePos = pos;
+    preOrientation = robot.orientation();
 
-    pre_orientation = robot.orientation();
 }

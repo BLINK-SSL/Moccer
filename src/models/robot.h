@@ -7,6 +7,8 @@
 
 using namespace std;
 
+#define DECREASE_VALUE 1e-3
+
 class Robot {
 public:
     Robot();
@@ -14,8 +16,6 @@ public:
 
     float confidence;
     unsigned int robotId;
-    float x;
-    float y;
     float orientation;
     float pixelX;
     float pixelY;
@@ -25,9 +25,8 @@ public:
     Eigen::Vector2d pos;
     Eigen::Vector2d dest;
     Eigen::Vector2d vel;
+    Eigen::Vector2d prePos;
     float velocity;
     float angularVelocity;
-    float pre_x;
-    float pre_y;
-    float pre_orientation;
+    float preOrientation;
 };

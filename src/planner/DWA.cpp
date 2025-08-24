@@ -115,7 +115,7 @@ void DWA::run() {
 
 void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
     for (double Velocity = bot.velocity - predictDelta * maxVelocityAcc; Velocity <= bot.velocity + predictDelta * maxVelocityAcc; Velocity += velocityAccuracy) {
-        std::cout << Velocity << std::endl;
+        // std::cout << Velocity << std::endl;
         if (fabs(Velocity) > maxVelocity) continue;
 
         Trajectory.clear();
@@ -128,8 +128,11 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
         // if (Dist_To_Obstacle != -1 && Break_Length > Dist_To_Obstacle) continue;
 
         double Dist_To_Goal = Get_Dist_To_Goal(bot.dest);
-        // double Dist_To_D_Star = Get_D_Star_Dist(dstarPlan, Trajectory[Trajectory.size() - 1]);
-        double Dist_To_D_Star = 0;
+        if (Break_Length > Dist_To_Goal) {
+            continue;
+        }
+        double Dist_To_D_Star = Get_D_Star_Dist(dstarPlan, Trajectory[Trajectory.size() - 1]);
+
         MIN_Dist_To_Obstacle = MIN(Dist_To_Obstacle, MIN_Dist_To_Obstacle);
         MAX_Dist_To_Obstacle = MAX(Dist_To_Obstacle, MAX_Dist_To_Obstacle);
         MIN_Dist_To_Goal = MIN(Dist_To_Goal, MIN_Dist_To_Goal);
@@ -157,17 +160,13 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
         i.Dist_To_D_Star =
             (i.Dist_To_D_Star - MIN_Dist_To_D_Star) / (MAX_Dist_To_D_Star - MIN_Dist_To_D_Star + 1e-8);
     }
-    double vx = 0;
-    double vy = 0;
     double MAX_Score = -1e100;
     for (auto &i : Ok_List) {
         double Now_Score = 0;
-        Now_Score += Goal * i.Dist_To_Goal;
+        Now_Score += Goal * (1.0 - i.Dist_To_Goal);
         Now_Score += Velocity * i.Velocity;
-        // std::cout << "Dist_To_Goal: " << i.Dist_To_Goal << std::endl;
-        // std::cout << "Velocity: " << i.Velocity << std::endl;
-        // // Now_Score += Alpha * i.Dist_To_Obstacle;
-        // Now_Score += D_Star * i.Dist_To_D_Star;
+        // Now_Score += Alpha * i.Dist_To_Obstacle;
+        Now_Score += D_Star * i.Dist_To_D_Star;
 
         if (Now_Score > MAX_Score) {
             MAX_Score = Now_Score;
@@ -175,20 +174,18 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
 
             double botDestRad = atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x());
 
-            // グローバル速度ベクトル
-            vx = i.VELOCITY * cos(botDestRad);
-            vy = i.VELOCITY * sin(botDestRad);
+            double vx = i.VELOCITY * cos(botDestRad);
+            double vy = i.VELOCITY * sin(botDestRad);
 
-            // ロボットの向き（ラジアン）
             double theta = bot.orientation;
 
-            // グローバル → ローカル変換
             double veltangent = cos(theta) * vx + sin(theta) * vy;
             double velnormal = -sin(theta) * vx + cos(theta) * vy;
 
             robotCmds[bot.robotId].vel = Eigen::Vector2d(veltangent, velnormal);
         }
     }
-    std::cout << "robotPos: " << bot.pos.x() << " " << bot.pos.y() << std::endl;
-    std::cout << "velocity: " << sqrt(vx * vx + vy * vy) << std::endl;
+    // std::cout << "robotPos: " << bot.pos.x() << " " << bot.pos.y() << std::endl;
+    std::cout << "velocity: " << bot.velocity << std::endl;
+    // std::cout << "Selected velocity: " << sqrt(robotCmds[bot.robotId].vel.x() * robotCmds[bot.robotId].vel.x() + robotCmds[bot.robotId].vel.y() * robotCmds[bot.robotId].vel.y()) << std::endl;
 }

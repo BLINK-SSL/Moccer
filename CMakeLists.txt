@@ -11,6 +11,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     include_directories("/opt/homebrew/opt/protobuf@21/include")
     include_directories("/opt/homebrew/opt/eigen/include")
     include_directories("/opt/homebrew/opt/yaml-cpp/include")
+    set(Yaml_CPP_LIBRARIES "/opt/homebrew/opt/yaml-cpp/lib/libyaml-cpp.dylib")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Linux Protobuf path settings
     set(Protobuf_INCLUDE_DIR "/usr/local/include")
@@ -22,12 +23,7 @@ endif()
 
 find_package(Threads REQUIRED)
 
-# if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-#     cmake_policy(SET CMP0167 OLD)
-# endif()
-# find_package(Boost REQUIRED COMPONENTS system thread)
 find_package(Boost 1.70 REQUIRED)
-# target_link_libraries(Moccer Boost::Boost)
 include_directories(${Boost_INCLUDE_DIRS})
 
 # Protobuf settings
@@ -95,7 +91,7 @@ target_link_libraries(Moccer
     ${Protobuf_LIBRARIES}
     Eigen3::Eigen
     Threads::Threads
-    yaml-cpp
+    ${Yaml_CPP_LIBRARIES}
 )
 
 

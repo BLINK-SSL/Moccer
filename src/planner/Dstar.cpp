@@ -701,10 +701,12 @@ void Dstar::run() {
         resetMap();
         addFieldObstacle();
         for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
+            if (!enemyRobots[i].active) continue;
             addCircularObstacle(enemyRobots[i].pos.x(), enemyRobots[i].pos.y(), 200, 0);
         }
 
         for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
+            if (!ourRobots[i].active) continue;
             updateStart(ourRobots[i].pos.x(), ourRobots[i].pos.y());
             updateGoal(0, 0);
             replan(i);

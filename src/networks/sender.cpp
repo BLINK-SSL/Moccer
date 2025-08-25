@@ -23,8 +23,8 @@ void Sender::send(bool is_yellow, RobotCmd* cmds) {
         command->set_id(cmds[i].id);
         command->set_kickspeedx(cmds[i].kickPow);
         command->set_kickspeedz(cmds[i].chipKickPow);
-        command->set_veltangent(1);
-        command->set_velnormal(0);
+        command->set_veltangent(cmds[i].vel.x()/1000);
+        command->set_velnormal(cmds[i].vel.y()/1000);
         command->set_velangular(cmds[i].angVel);
         command->set_spinner(false);
         command->set_wheelsspeed(false);

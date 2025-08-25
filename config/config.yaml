@@ -9,10 +9,10 @@ Planner:
   Obstacle: 0.5
   Goal: 1
   Velocity: 0
-  D_Star: 1
+  D_Star: 5
 
-  Delta: 0.01
-  PredictDelta: 0.1
+  Delta: 0.02
+  PredictDelta: 0.2
   VelocityAccuracy: 100
 
 # Network Configuration

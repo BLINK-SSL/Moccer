@@ -270,15 +270,15 @@ void Dstar::updateVertex(state u) {
     list<state>::iterator i;
 
     if (u != s_goal) {
-    getSucc(u,s);
-    double tmp = INFINITY;
-    double tmp2;
+        getSucc(u,s);
+        double tmp = INFINITY;
+        double tmp2;
 
-    for (i=s.begin();i != s.end(); i++) {
-        tmp2 = getG(*i) + cost(u,*i);
-        if (tmp2 < tmp) tmp = tmp2;
-    }
-    if (!close(getRHS(u),tmp)) setRHS(u,tmp);
+        for (i=s.begin();i != s.end(); i++) {
+            tmp2 = getG(*i) + cost(u,*i);
+            if (tmp2 < tmp) tmp = tmp2;
+        }
+        if (!close(getRHS(u),tmp)) setRHS(u,tmp);
     }
 
     if (!close(getG(u),getRHS(u))) insert(u);
@@ -387,10 +387,10 @@ void Dstar::updateCell(float x, float y, double val) {
 
     if ((u == s_start) || (u == s_goal)) return;
 
-    // makeNewCell(u);
+    makeNewCell(u);
 
     cellHash[u].cost = val;
-    // updateVertex(u);
+    updateVertex(u);
 }
 
 /* void Dstar::getSucc(state u,list<state> &s)
@@ -602,7 +602,6 @@ bool Dstar::replan(int id) {
         state smin;
 
         for (i=n.begin(); i!=n.end(); i++) {
-            //if (occupied(*i)) continue;
             double val  = cost(cur,*i);
             double val2 = trueDist(*i,s_goal) + trueDist(s_start,*i); // (Euclidean) cost to goal + cost to pred
             val += getG(*i);

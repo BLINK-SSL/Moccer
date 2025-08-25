@@ -83,8 +83,10 @@ void DWA::update(Robot* ourRobots, Robot* enemyRobots, vector<Eigen::Vector2d>* 
     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
         this->ourRobots[i] = ourRobots[i];
         this->enemyRobots[i] = enemyRobots[i];
-        if (dstarPlans) {
+        if (dstarPlans && !dstarPlans->empty()) {
             this->dstarPlans[i] = dstarPlans[i];
+            for (const auto& point : dstarPlans[i]) {
+            }
         }
     }
 }
@@ -186,6 +188,6 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
         }
     }
     // std::cout << "robotPos: " << bot.pos.x() << " " << bot.pos.y() << std::endl;
-    std::cout << "velocity: " << bot.velocity << std::endl;
+    // std::cout << "velocity: " << bot.velocity << std::endl;
     // std::cout << "Selected velocity: " << sqrt(robotCmds[bot.robotId].vel.x() * robotCmds[bot.robotId].vel.x() + robotCmds[bot.robotId].vel.y() * robotCmds[bot.robotId].vel.y()) << std::endl;
 }

@@ -44,7 +44,7 @@ public:
     DWA(const YAML::Node& config);
     ~DWA();
 
-    void update(Robot* ourRobots, Robot* enemyRobots, vector<Eigen::Vector2d>* dstarPlans);
+    void update(Robot* ourRobots, Robot* enemyRobots, array<vector<Eigen::Vector2d>, 16>& dstarPlans);
     void start();
     void stop();
 
@@ -126,7 +126,7 @@ private:
     Robot ourRobots[16];
     Robot enemyRobots[16];
     RobotCmd robotCmds[16];
-    vector<Eigen::Vector2d> dstarPlans[16];
+    array<vector<Eigen::Vector2d>, 16> dstarPlans;
 
     double MIN_Dist_To_Obstacle;
     double MAX_Dist_To_Obstacle;

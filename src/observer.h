@@ -28,7 +28,7 @@ class Observer {
         Robot* ourRobots;
         Robot* enemyRobots;
 
-        std::vector<Eigen::Vector2d>* dstarPlans;
+        array<vector<Eigen::Vector2d>,16> dstarPlans;
         RobotCmd* dwaPlans;
 };
 

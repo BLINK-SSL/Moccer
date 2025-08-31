@@ -79,13 +79,14 @@ bool DWA::Get_Trajectory(Robot bot, double Velocity) {
     return true;
 }
 
-void DWA::update(Robot* ourRobots, Robot* enemyRobots, vector<Eigen::Vector2d>* dstarPlans) {
+void DWA::update(Robot* ourRobots, Robot* enemyRobots, array<vector<Eigen::Vector2d>, 16>& dstarPlans) {
     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
         this->ourRobots[i] = ourRobots[i];
         this->enemyRobots[i] = enemyRobots[i];
-        if (dstarPlans && !dstarPlans->empty()) {
+        if (!dstarPlans[i].empty()) {
             this->dstarPlans[i] = dstarPlans[i];
             for (const auto& point : dstarPlans[i]) {
+                this->dstarPlans[i].push_back(Eigen::Vector2d(point.x(), point.y()));
             }
         }
     }
@@ -168,7 +169,7 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
         Now_Score += Goal * (1.0 - i.Dist_To_Goal);
         Now_Score += Velocity * i.Velocity;
         // Now_Score += Alpha * i.Dist_To_Obstacle;
-        Now_Score += D_Star * i.Dist_To_D_Star;
+        Now_Score += D_Star * (1.0 - i.Dist_To_D_Star);
 
         if (Now_Score > MAX_Score) {
             MAX_Score = Now_Score;

@@ -7,9 +7,9 @@ Planner:
   dRatio: 75
   SafeDistance: 200.0
   Obstacle: 0.5
-  Goal: 1
+  Goal: 0
   Velocity: 0
-  D_Star: 5
+  D_Star: 1
 
   Delta: 0.02
   PredictDelta: 0.2

@@ -684,9 +684,9 @@ void Dstar::update(Robot* ourRobots, Robot* enemyRobots) {
     }
 }
 
-vector<Eigen::Vector2d>* Dstar::getPlans() {
+array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
     std::lock_guard<std::mutex> lock(plansMutex);
-    vector<Eigen::Vector2d> newPlans[conf["General"]["MaxRobotCount"].as<int>()];
+    array<vector<Eigen::Vector2d>, 16> newPlans;
     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
         for (auto &p : tmpPlans[i]) {
             newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));

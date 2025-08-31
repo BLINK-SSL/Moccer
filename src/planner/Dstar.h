@@ -68,7 +68,7 @@ public:
     void   update(Robot* ourRobots, Robot* enemyRobots);
     void   run();
 
-    vector<Eigen::Vector2d>* getPlans();
+    array<vector<Eigen::Vector2d>, 16> getPlans();
 
 private:
 

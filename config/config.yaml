@@ -8,8 +8,8 @@ Planner:
   SafeDistance: 200.0
   Obstacle: 0.5
   Goal: 0
-  Velocity: 0
-  D_Star: 1
+  Velocity: 1
+  D_Star: 0
 
   Delta: 0.02
   PredictDelta: 0.2
@@ -26,7 +26,7 @@ Network:
 
 # Robot Configuration
 Robot:
-  MaxVelocity: 5000
+  MaxVelocity: 3000
   MaxAngularVelocity: 1.0
-  MaxVelocityAcceleration: 3000
+  MaxVelocityAcceleration: 1500
   MaxAngularAcceleration: 0.5

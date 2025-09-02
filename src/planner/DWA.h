@@ -48,7 +48,7 @@ public:
     void start();
     void stop();
 
-    bool Get_Trajectory(Robot bot, double Velocity);
+    bool Get_Trajectory(Robot bot, double Velocity, vector<Eigen::Vector2d> dstarPlan);
     double Get_Dist_To_Obstacle();
 
     double MIN(double a, double b) {

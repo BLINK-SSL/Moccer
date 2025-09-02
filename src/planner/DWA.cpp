@@ -60,12 +60,17 @@ bool Legal_Coordinate(Eigen::Vector2d pos) {
     return true;
 }
 
-bool DWA::Get_Trajectory(Robot bot, double Velocity) {
+bool DWA::Get_Trajectory(Robot bot, double Velocity, vector<Eigen::Vector2d> dstarPlan) {
     Eigen::Vector2d position = bot.pos;
     double Time_Sum = 0;
     while (Time_Sum <= predictDelta) {
         Time_Sum += delta;
         double botDestRad = atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x());
+        if (!dstarPlan.empty() && dstarPlan[0].allFinite()) {
+            botDestRad = atan2(dstarPlan[0].y() - bot.pos.y(), dstarPlan[0].x() - bot.pos.x());
+                // std::cout << "size: " << dstarPlan.size() << std::endl;
+                // std::cout << "D_star[0]: " << dstarPlan[0].x() << " " << dstarPlan[0].y() << std::endl;
+        }
         double Next_Angle = bot.orientation + bot.angularVelocity * delta;
         position.x() += Velocity * cos(botDestRad) * delta;
         position.y() += Velocity * sin(botDestRad) * delta;
@@ -84,10 +89,11 @@ void DWA::update(Robot* ourRobots, Robot* enemyRobots, array<vector<Eigen::Vecto
         this->ourRobots[i] = ourRobots[i];
         this->enemyRobots[i] = enemyRobots[i];
         if (!dstarPlans[i].empty()) {
+            // this->dstarPlans[i].clear();
             this->dstarPlans[i] = dstarPlans[i];
-            for (const auto& point : dstarPlans[i]) {
-                this->dstarPlans[i].push_back(Eigen::Vector2d(point.x(), point.y()));
-            }
+            // for (const auto& point : dstarPlans[i]) {
+            //     this->dstarPlans[i].push_back(Eigen::Vector2d(point.x(), point.y()));
+            // }
         }
     }
 }
@@ -122,7 +128,7 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
         if (fabs(Velocity) > maxVelocity) continue;
 
         Trajectory.clear();
-        if (!Get_Trajectory(bot, Velocity)) continue;
+        if (!Get_Trajectory(bot, Velocity, dstarPlan)) continue;
 
         double Break_Length = ((Velocity * Velocity / (2 * maxVelocityAcc)) / One_Block);
         // double Dist_To_Obstacle = Get_Dist_To_Obstacle();
@@ -175,7 +181,19 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
             MAX_Score = Now_Score;
             robotCmds[bot.robotId].id = bot.robotId;
 
-            double botDestRad = atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x());
+            double botDestRad;
+            botDestRad = atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x());
+            if (!dstarPlan.empty() && dstarPlan[0].allFinite()) {
+                botDestRad = atan2(dstarPlan[15].y() - bot.pos.y(), dstarPlan[15].x() - bot.pos.x());
+                std::cout << "Bot_Pos: " << bot.pos.x() << " " << bot.pos.y() << std::endl;
+                std::cout << "D_star[0]: " << dstarPlan[15].x() << " " << dstarPlan[15].y() << std::endl;
+
+                std::cout << "Rad: " << botDestRad*180/3.14 << std::endl;
+                std::cout << "botRad: " << atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x())*180/3.14 << std::endl;
+                std::cout << " " << std::endl;
+
+            }
+
 
             double vx = i.VELOCITY * cos(botDestRad);
             double vy = i.VELOCITY * sin(botDestRad);

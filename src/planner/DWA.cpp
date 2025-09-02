@@ -67,7 +67,7 @@ bool DWA::Get_Trajectory(Robot bot, double Velocity, vector<Eigen::Vector2d> dst
         Time_Sum += delta;
         double botDestRad = atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x());
         if (!dstarPlan.empty() && dstarPlan[0].allFinite()) {
-            botDestRad = atan2(dstarPlan[0].y() - bot.pos.y(), dstarPlan[0].x() - bot.pos.x());
+            botDestRad = atan2(dstarPlan[5].y() - bot.pos.y(), dstarPlan[5].x() - bot.pos.x());
                 // std::cout << "size: " << dstarPlan.size() << std::endl;
                 // std::cout << "D_star[0]: " << dstarPlan[0].x() << " " << dstarPlan[0].y() << std::endl;
         }
@@ -183,17 +183,14 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
 
             double botDestRad;
             botDestRad = atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x());
-            if (!dstarPlan.empty() && dstarPlan[0].allFinite()) {
-                botDestRad = atan2(dstarPlan[15].y() - bot.pos.y(), dstarPlan[15].x() - bot.pos.x());
-                std::cout << "Bot_Pos: " << bot.pos.x() << " " << bot.pos.y() << std::endl;
-                std::cout << "D_star[0]: " << dstarPlan[15].x() << " " << dstarPlan[15].y() << std::endl;
-
-                std::cout << "Rad: " << botDestRad*180/3.14 << std::endl;
-                std::cout << "botRad: " << atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x())*180/3.14 << std::endl;
-                std::cout << " " << std::endl;
-
+            if (!dstarPlan.empty() && dstarPlan[0].allFinite() && dstarPlan[5].x() - bot.pos.x() != 0 && dstarPlan.size() > 5) {
+                botDestRad = atan2(dstarPlan[5].y() - bot.pos.y(), dstarPlan[5].x() - bot.pos.x());
+            //     std::cout << "Bot_Pos: " << bot.pos.x() << " " << bot.pos.y() << std::endl;
+            //     std::cout << "D_star[0]: " << dstarPlan[15].x() << " " << dstarPlan[15].y() << std::endl;
+            //     std::cout << "Rad: " << botDestRad*180/3.14 << std::endl;
+            //     std::cout << "botRad: " << atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x())*180/3.14 << std::endl;
+            //     std::cout << " " << std::endl;
             }
-
 
             double vx = i.VELOCITY * cos(botDestRad);
             double vy = i.VELOCITY * sin(botDestRad);

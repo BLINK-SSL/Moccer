@@ -684,12 +684,47 @@ void Dstar::update(Robot* ourRobots, Robot* enemyRobots) {
     }
 }
 
+// array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
+//     std::lock_guard<std::mutex> lock(plansMutex);
+//     array<vector<Eigen::Vector2d>, 16> newPlans;
+//     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
+//         for (auto &p : tmpPlans[i]) {
+//             newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));
+//         }
+//     }
+//     return newPlans;
+// }
+
+// スプライン生成関数
+Eigen::Spline2d Dstar::generateSpline(const std::vector<Eigen::Vector2d>& points) {
+    Eigen::MatrixXd pts(2, points.size());
+    for (size_t i = 0; i < points.size(); ++i) {
+        pts(0, i) = points[i].x();
+        pts(1, i) = points[i].y();
+    }
+    Eigen::RowVectorXd t = Eigen::RowVectorXd::LinSpaced(points.size(), 0.0, 1.0);
+    return Eigen::SplineFitting<Eigen::Spline2d>::Interpolate(pts, 3, t);
+}
+
 array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
     std::lock_guard<std::mutex> lock(plansMutex);
     array<vector<Eigen::Vector2d>, 16> newPlans;
-    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
+    for (int i = 0; i < 1; i++) {
+        std::vector<Eigen::Vector2d> rawPoints;
         for (auto &p : tmpPlans[i]) {
-            newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));
+            rawPoints.emplace_back(p.x*dRatio, p.y*dRatio);
+        }
+        if (rawPoints.size() < 10) {
+            newPlans[i] = rawPoints; // 点が少ないならそのまま
+            continue;
+        }
+        auto spline = generateSpline(rawPoints);
+
+        // // サンプリングして滑らかな点列に変換
+        for (int k = 0; k <= 20; ++k) {
+            double u = static_cast<double>(k) / 20.0;
+            Eigen::Vector2d pt = spline(u);
+            newPlans[i].push_back(pt);
         }
     }
     return newPlans;
@@ -699,9 +734,10 @@ void Dstar::run() {
     while (running_) {
         resetMap();
         addFieldObstacle();
-        for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
+        // for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
+        for (int i = 0; i < 11; i++) {
             if (!enemyRobots[i].active) continue;
-            addCircularObstacle(enemyRobots[i].pos.x(), enemyRobots[i].pos.y(), 200, 0);
+            addCircularObstacle(enemyRobots[i].pos.x(), enemyRobots[i].pos.y(), 400, 0);
         }
 
         for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {

@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <ext/hash_map>
 #include <yaml-cpp/yaml.h>
+#include <unsupported/Eigen/Splines>
 
 #include "../models/state.h"
 #include "../models/robot.h"
@@ -69,6 +70,7 @@ public:
     void   run();
 
     array<vector<Eigen::Vector2d>, 16> getPlans();
+    Eigen::Spline2d generateSpline(const std::vector<Eigen::Vector2d>& points);
 
 private:
 

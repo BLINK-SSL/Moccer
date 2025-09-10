@@ -68,8 +68,6 @@ bool DWA::Get_Trajectory(Robot bot, double Velocity, vector<Eigen::Vector2d> dst
         double botDestRad = atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x());
         if (!dstarPlan.empty() && dstarPlan[0].allFinite()) {
             botDestRad = atan2(dstarPlan[5].y() - bot.pos.y(), dstarPlan[5].x() - bot.pos.x());
-                // std::cout << "size: " << dstarPlan.size() << std::endl;
-                // std::cout << "D_star[0]: " << dstarPlan[0].x() << " " << dstarPlan[0].y() << std::endl;
         }
         double Next_Angle = bot.orientation + bot.angularVelocity * delta;
         position.x() += Velocity * cos(botDestRad) * delta;

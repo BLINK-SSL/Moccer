@@ -11,7 +11,7 @@
 using namespace std::chrono;
 
 Dstar::Dstar(const YAML::Node& config) : conf(config), running_(false) {
-    maxSteps = 80000;  // node expansions before we give up
+    maxSteps = 800000;  // node expansions before we give up
     C1       = 1;      // cost of an unseen cell
     dRatio   = conf["Planner"]["dRatio"].as<float>();
 
@@ -117,7 +117,7 @@ int Dstar::computeShortestPath() {
     while ((!openList.empty()) &&
             (openList.top() < (s_start = calculateKey(s_start))) ||
             (getRHS(s_start) != getG(s_start))) {
-
+        
         if (k++ > maxSteps) {
             fprintf(stderr, "At maxsteps\n");
             return -1;
@@ -369,6 +369,13 @@ void Dstar::getPred(state u,list<state> &s) {
  * Update the position of the robot, this does not force a replan.
  */
 void Dstar::updateStart(float x, float y) {
+    state u;
+    u.x = x / dRatio;
+    u.y = y / dRatio;
+    if (occupied(u)) {
+        fprintf(stderr, "Start position is inside an obstacle\n");
+        return;
+    }
     s_start.x = x / dRatio;
     s_start.y = y / dRatio;
 
@@ -464,7 +471,8 @@ bool Dstar::replan(int id) {
         return false;
     }
 
-    while(cur != s_goal) {
+    while(cur != s_goal && (plans[id].size() < 1000)) {
+        std::cout << "size: " << plans[id].size() << std::endl;
         plans[id].push_back(cur);
         getSucc(cur, n);
 
@@ -590,12 +598,12 @@ array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
             rawPoints.emplace_back(p.x*dRatio, p.y*dRatio);
         }
         if (rawPoints.size() < 10) {
-            newPlans[i] = rawPoints; // 点が少な�?ならそのまま
+            newPlans[i] = rawPoints; // 点㝌少㝪�?㝪ら㝝㝮㝾㝾
             continue;
         }
         auto spline = generateSpline(rawPoints);
 
-        // // サンプリングして滑らかな点列に変換
+        // // サンプリング㝗㝦滑ら㝋㝪点列㝫変杛
         for (int k = 0; k <= 20; ++k) {
             double u = static_cast<double>(k) / 20.0;
             Eigen::Vector2d pt = spline(u);
@@ -608,11 +616,11 @@ array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
 void Dstar::run() {
     while (running_) {
         resetMap();
-        addFieldObstacle();
+        // addFieldObstacle();
         // for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
         for (int i = 0; i < 11; i++) {
             if (!enemyRobots[i].active) continue;
-            addCircularObstacle(enemyRobots[i].pos.x(), enemyRobots[i].pos.y(), 400, 0);
+            addCircularObstacle(enemyRobots[i].pos.x(), enemyRobots[i].pos.y(), 360, 0);
         }
 
         for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {

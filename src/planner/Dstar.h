@@ -58,7 +58,7 @@ public:
     ~Dstar();
     void   init(float sX, float sY, float gX, float gY);
     void   updateCell(float x, float y, double val);
-    void   updateStart(float x, float y);
+    bool   updateStart(float x, float y);
     void   updateGoal(float x, float y);
     bool   replan(int id);
     void   addCircularObstacle(float cx, float cy, float outerRadius, float innerRadius);

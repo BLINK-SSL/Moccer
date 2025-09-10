@@ -9,10 +9,7 @@
 #include <iostream>
 #include <chrono>
 using namespace std::chrono;
-/* void Dstar::Dstar()
- * --------------------------
- * Constructor sets constants.
- */
+
 Dstar::Dstar(const YAML::Node& config) : conf(config), running_(false) {
     maxSteps = 80000;  // node expansions before we give up
     C1       = 1;      // cost of an unseen cell
@@ -40,20 +37,10 @@ void Dstar::stop() {
     }
 }
 
-/* float Dstar::keyHashCode(state u)
- * --------------------------
- * Returns the key hash code for the state u, this is used to compare
- * a state that have been updated
- */
 float Dstar::keyHashCode(state u) {
     return (float)(u.k.first + 1193*u.k.second);
 }
 
-/* bool Dstar::isValid(state u)
- * --------------------------
- * Returns true if state u is on the open list or not by checking if
- * it is in the hash table.
- */
 bool Dstar::isValid(state u) {
     ds_oh::iterator cur = openHash.find(u);
     if (cur == openHash.end()) return false;
@@ -61,53 +48,12 @@ bool Dstar::isValid(state u) {
     return true;
 }
 
-/* bool Dstar::occupied(state u)
- * --------------------------
- * returns true if the cell is occupied (non-traversable), false
- * otherwise. non-traversable are marked with a cost < 0.
- */
 bool Dstar::occupied(state u) {
     ds_ch::iterator cur = cellHash.find(u);
     if (cur == cellHash.end()) return false;
     return (cur->second.cost < 0);
 }
 
-/* void Dstar::init(int sX, int sY, int gX, int gY)
- * --------------------------
- * Init dstar with start and goal coordinates, rest is as per
- * [S. Koenig, 2002]
- */
-// void Dstar::init(float sX, float sY, float gX, float gY) {
-//     cellHash.clear();
-//     plans.clear();
-//     openHash.clear();
-//     while(!openList.empty()) openList.pop();
-
-//     k_m = 0;
-
-//     s_start.x = sX / dRatio;
-//     s_start.y = sY / dRatio;
-//     s_goal.x  = gX / dRatio;
-//     s_goal.y  = gY / dRatio;
-
-//     cellInfo tmp;
-//     tmp.g = tmp.rhs =  0;
-//     tmp.cost = C1;
-
-//     cellHash[s_goal] = tmp;
-
-//     tmp.g = tmp.rhs = heuristic(s_start,s_goal);
-//     tmp.cost = C1;
-//     cellHash[s_start] = tmp;
-//     s_start = calculateKey(s_start);
-
-//     s_last = s_start;
-
-// }
-/* void Dstar::makeNewCell(state u)
- * --------------------------
- * Checks if a cell is in the hash table, if not it adds it in.
- */
 void Dstar::makeNewCell(state u) {
 
     if (cellHash.find(u) != cellHash.end()) return;
@@ -119,10 +65,6 @@ void Dstar::makeNewCell(state u) {
 
 }
 
-/* double Dstar::getG(state u)
- * --------------------------
- * Returns the G value for state u.
- */
 double Dstar::getG(state u) {
 
     if (cellHash.find(u) == cellHash.end())
@@ -131,10 +73,6 @@ double Dstar::getG(state u) {
 
 }
 
-/* double Dstar::getRHS(state u)
- * --------------------------
- * Returns the rhs value for state u.
- */
 double Dstar::getRHS(state u) {
 
     if (u == s_goal) return 0;
@@ -145,31 +83,17 @@ double Dstar::getRHS(state u) {
 
 }
 
-/* void Dstar::setG(state u, double g)
- * --------------------------
- * Sets the G value for state u
- */
 void Dstar::setG(state u, double g) {
 
     makeNewCell(u);
     cellHash[u].g = g;
 }
 
-/* void Dstar::setRHS(state u, double rhs)
- * --------------------------
- * Sets the rhs value for state u
- */
 double Dstar::setRHS(state u, double rhs) {
-
     makeNewCell(u);
     cellHash[u].rhs = rhs;
-
 }
 
-/* double Dstar::eightCondist(state a, state b)
- * --------------------------
- * Returns the 8-way distance between state a and state b.
- */
 double Dstar::eightCondist(state a, state b) {
     double temp;
     double min = fabs(a.x - b.x);
@@ -182,15 +106,6 @@ double Dstar::eightCondist(state a, state b) {
     return ((M_SQRT2-1.0)*min + max);
 }
 
-/* int Dstar::computeShortestPath()
- * --------------------------
- * As per [S. Koenig, 2002] except for 2 main modifications:
- * 1. We stop planning after a number of steps, 'maxsteps' we do this
- *    because this algorithm can plan forever if the start is
- *    surrounded by obstacles.
- * 2. We lazily remove states from the open list so we never have to
- *    iterate through it.
- */
 int Dstar::computeShortestPath() {
 
     list<state> s;
@@ -249,10 +164,6 @@ int Dstar::computeShortestPath() {
     return 0;
 }
 
-/* bool Dstar::close(double x, double y)
- * --------------------------
- * Returns true if x and y are within 10E-5, false otherwise
- */
 bool Dstar::close(double x, double y) {
 
     if (isinf(x) && isinf(y)) return true;
@@ -260,10 +171,6 @@ bool Dstar::close(double x, double y) {
 
 }
 
-/* void Dstar::updateVertex(state u)
- * --------------------------
- * As per [S. Koenig, 2002]
- */
 void Dstar::updateVertex(state u) {
 
     list<state> s;
@@ -285,10 +192,6 @@ void Dstar::updateVertex(state u) {
 
 }
 
-/* void Dstar::insert(state u)
- * --------------------------
- * Inserts state u into openList and openHash.
- */
 void Dstar::insert(state u) {
 
     ds_oh::iterator cur;
@@ -307,11 +210,6 @@ void Dstar::insert(state u) {
     openList.push(u);
 }
 
-/* void Dstar::remove(state u)
- * --------------------------
- * Removes state u from openHash. The state is removed from the
- * openList lazilily (in replan) to save computation.
- */
 void Dstar::remove(state u) {
 
     ds_oh::iterator cur = openHash.find(u);
@@ -320,10 +218,6 @@ void Dstar::remove(state u) {
 }
 
 
-/* double Dstar::trueDist(state a, state b)
- * --------------------------
- * Euclidean cost between state a and state b.
- */
 double Dstar::trueDist(state a, state b) {
 
     float x = a.x-b.x;
@@ -332,19 +226,10 @@ double Dstar::trueDist(state a, state b) {
 
 }
 
-/* double Dstar::heuristic(state a, state b)
- * --------------------------
- * Pretty self explanitory, the heristic we use is the 8-way distance
- * scaled by a constant C1 (should be set to <= min cost).
- */
 double Dstar::heuristic(state a, state b) {
     return eightCondist(a,b)*C1;
 }
 
-/* state Dstar::calculateKey(state u)
- * --------------------------
- * As per [S. Koenig, 2002]
- */
 state Dstar::calculateKey(state u) {
 
     double val = fmin(getRHS(u),getG(u));
@@ -356,12 +241,6 @@ state Dstar::calculateKey(state u) {
 
 }
 
-/* double Dstar::cost(state a, state b)
- * --------------------------
- * Returns the cost of moving from state a to state b. This could be
- * either the cost of moving off state a or onto state b, we went with
- * the former. This is also the 8-way cost.
- */
 double Dstar::cost(state a, state b) {
 
     int xd = fabs(a.x-b.x);
@@ -374,10 +253,7 @@ double Dstar::cost(state a, state b) {
     return scale*cellHash[a].cost;
 
 }
-/* void Dstar::updateCell(int x, int y, double val)
- * --------------------------
- * As per [S. Koenig, 2002]
- */
+
 void Dstar::updateCell(float x, float y, double val) {
 
     state u;
@@ -695,7 +571,6 @@ void Dstar::update(Robot* ourRobots, Robot* enemyRobots) {
 //     return newPlans;
 // }
 
-// スプライン生成関数
 Eigen::Spline2d Dstar::generateSpline(const std::vector<Eigen::Vector2d>& points) {
     Eigen::MatrixXd pts(2, points.size());
     for (size_t i = 0; i < points.size(); ++i) {
@@ -715,7 +590,7 @@ array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
             rawPoints.emplace_back(p.x*dRatio, p.y*dRatio);
         }
         if (rawPoints.size() < 10) {
-            newPlans[i] = rawPoints; // 点が少ないならそのまま
+            newPlans[i] = rawPoints; // 点が少な�?ならそのまま
             continue;
         }
         auto spline = generateSpline(rawPoints);

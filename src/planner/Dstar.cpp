@@ -633,9 +633,8 @@ void Dstar::run() {
 
         for (int i = 0; i < ourIDs.size(); i++) {
             if (!ourRobots[ourIDs[i]].active) continue;
-            updateGoal(-2000, 0);
             updateStart(ourRobots[ourIDs[i]].pos.x(), ourRobots[ourIDs[i]].pos.y());
-            
+            updateGoal(ourRobots[ourIDs[i]].dest.x(), ourRobots[ourIDs[i]].dest.y());
             replan(ourIDs[i]);
         }
 

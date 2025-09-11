@@ -372,19 +372,37 @@ void Dstar::updateStart(float x, float y) {
     state u;
     u.x = x / dRatio;
     u.y = y / dRatio;
+
     if (occupied(u)) {
         fprintf(stderr, "Start position is inside an obstacle\n");
-        return;
+
+        // 近傍探索して空いているセルを探す
+        bool found = false;
+        for (int dx = -5; dx <= 5 && !found; ++dx) {
+            for (int dy = -5; dy <= 5 && !found; ++dy) {
+                state v = u;
+                v.x += dx;
+                v.y += dy;
+                if (!occupied(v)) {
+                    u = v;
+                    found = true;
+                }
+            }
+        }
+
+        if (!found) {
+            fprintf(stderr, "No valid start position near obstacle\n");
+            return;
+        }
     }
-    s_start.x = x / dRatio;
-    s_start.y = y / dRatio;
 
-    k_m += heuristic(s_last,s_start);
-
+    s_start.x = u.x;
+    s_start.y = u.y;
+    k_m += heuristic(s_last, s_start);
     s_start = calculateKey(s_start);
-    s_last  = s_start;
-
+    s_last = s_start;
 }
+
 
 /* void Dstar::updateGoal(int x, int y)
  * --------------------------
@@ -471,8 +489,7 @@ bool Dstar::replan(int id) {
         return false;
     }
 
-    while(cur != s_goal && (plans[id].size() < 1000)) {
-        std::cout << "size: " << plans[id].size() << std::endl;
+    while(cur != s_goal) {
         plans[id].push_back(cur);
         getSucc(cur, n);
 
@@ -566,6 +583,7 @@ void Dstar::update(Robot* ourRobots, Robot* enemyRobots) {
         this->ourRobots[i] = ourRobots[i];
         this->enemyRobots[i] = enemyRobots[i];
     }
+    
 }
 
 // array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
@@ -593,21 +611,8 @@ array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
     std::lock_guard<std::mutex> lock(plansMutex);
     array<vector<Eigen::Vector2d>, 16> newPlans;
     for (int i = 0; i < 1; i++) {
-        std::vector<Eigen::Vector2d> rawPoints;
         for (auto &p : tmpPlans[i]) {
-            rawPoints.emplace_back(p.x*dRatio, p.y*dRatio);
-        }
-        if (rawPoints.size() < 10) {
-            newPlans[i] = rawPoints; // 点㝌少㝪�?㝪ら㝝㝮㝾㝾
-            continue;
-        }
-        auto spline = generateSpline(rawPoints);
-
-        // // サンプリング㝗㝦滑ら㝋㝪点列㝫変杛
-        for (int k = 0; k <= 20; ++k) {
-            double u = static_cast<double>(k) / 20.0;
-            Eigen::Vector2d pt = spline(u);
-            newPlans[i].push_back(pt);
+            newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));
         }
     }
     return newPlans;
@@ -629,6 +634,7 @@ void Dstar::run() {
             updateGoal(0, 0);
             replan(i);
         }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }   

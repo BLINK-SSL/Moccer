@@ -94,10 +94,11 @@ void DWA::update(Robot* ourRobots, Robot* enemyRobots, array<vector<Eigen::Vecto
             // }
         }
     }
+    
 }
 
 RobotCmd* DWA::getDwa() {
-    std::lock_guard<std::mutex> lock(dwaMutex);
+    // std::lock_guard<std::mutex> lock(dwaMutex);
     return this->robotCmds;
 }
 

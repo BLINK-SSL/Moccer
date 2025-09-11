@@ -18,8 +18,9 @@ void Observer::waitForReceiver() {
 }
 
 void Observer::update() {
-    waitForReceiver();
 
+    waitForReceiver();
+    
     ourRobots = receiver.getOurRobots();
     enemyRobots = receiver.getEnemyRobots();
 

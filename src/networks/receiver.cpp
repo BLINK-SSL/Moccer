@@ -95,11 +95,11 @@ void Receiver::receiveLoop() {
 }
 
 Robot* Receiver::getOurRobots() {
-    std::lock_guard<std::mutex> lock(ourRobotMutex);
+    // std::lock_guard<std::mutex> lock(ourRobotMutex);
     return ourRobot;
 }
 
 Robot* Receiver::getEnemyRobots() {
-    std::lock_guard<std::mutex> lock(enemyRobotMutex);
+    // std::lock_guard<std::mutex> lock(enemyRobotMutex);
     return enemyRobot;
 }

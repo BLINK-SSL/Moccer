@@ -1,25 +1,16 @@
-#include "src/networks/sender.h"
-#include "src/networks/receiver.h"
 #include <iostream>
+#include <yaml-cpp/yaml.h>
+#include "src/observer.h"
 
-using namespace std::chrono;
+int main(int argc, char** argv) {
 
-int main(int argc, char *argv[]) {
-    Sender sender;
-    Receiver receiver;
-    receiver.start();
-    auto sendInterval = milliseconds(16);
-    auto lastSendTime = steady_clock::now();
+    YAML::Node config = YAML::LoadFile("../config/config.yaml");
+
+    Observer observer(config);
+
     while (true) {
-        for (int i = 0; i < 16; ++i) {
-            Robot* robots = receiver.getBlueRobots();
-            // std::cout << "Blue Robot ID: " << i << ", X: " << robots[i].x << ", Y: " << robots[i].y << std::endl;
-        }
-        auto now = steady_clock::now();
-        if (now - lastSendTime >= sendInterval) {
-            sender.send(false);
-            lastSendTime = now;
-        }
+        observer.update();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    receiver.stop();
+    return 0;
 }

@@ -4,7 +4,8 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
-// #include <boost/asio.hpp>
+#include <yaml-cpp/yaml.h>
+
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/optional.hpp>
@@ -13,15 +14,19 @@
 #include "mocSim_Commands.pb.h"
 #include "mocSim_Packet.pb.h"
 
+#include "../models/cmd.h"
+
 using namespace std;
 
 class Sender {
 public:
-    Sender();
+    Sender(const YAML::Node& config);
     ~Sender();
-    void send(bool is_yellow);
+    void send(bool is_yellow, RobotCmd* cmds);
 
 private:
+    const YAML::Node& conf;
+
     boost::asio::io_context ioContext_;
     boost::asio::ip::udp::socket socket_;
     boost::asio::ip::udp::endpoint endpoint_;

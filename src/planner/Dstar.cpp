@@ -11,13 +11,18 @@
 using namespace std::chrono;
 
 Dstar::Dstar(const YAML::Node& config) : conf(config), running_(false) {
-    maxSteps = 800000;  // node expansions before we give up
+    maxSteps = 8000000;  // node expansions before we give up
     C1       = 1;      // cost of an unseen cell
     dRatio   = conf["Planner"]["dRatio"].as<float>();
 
     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
         plans[i] = list<state>();
         plans[i].push_back({0, 0});
+    }
+
+    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
+        ourIDs.push_back(i);
+        enemyIDs.push_back(i);
     }
 }
 
@@ -439,8 +444,8 @@ void Dstar::updateGoal(float x, float y) {
 
     k_m = 0;
 
-    s_goal.x  = x;
-    s_goal.y  = y;
+    s_goal.x  = x / dRatio;
+    s_goal.y  = y / dRatio;
 
     cellInfo tmp;
     tmp.g = tmp.rhs =  0;
@@ -581,23 +586,21 @@ void Dstar::resetMap()
 }
 
 void Dstar::update(Robot* ourRobots, Robot* enemyRobots) {
-    for (int i = 0; i < 16; ++i) {
+    std::lock_guard<std::mutex> lock(plansMutex);
+    ourIDs.clear();
+    enemyIDs.clear();
+    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
         this->ourRobots[i] = ourRobots[i];
+        if (ourRobots[i].active) {
+            ourIDs.push_back(i);
+        }
         this->enemyRobots[i] = enemyRobots[i];
+        if (enemyRobots[i].active) {
+            enemyIDs.push_back(i);
+        }
     }
     
 }
-
-// array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
-//     std::lock_guard<std::mutex> lock(plansMutex);
-//     array<vector<Eigen::Vector2d>, 16> newPlans;
-//     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
-//         for (auto &p : tmpPlans[i]) {
-//             newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));
-//         }
-//     }
-//     return newPlans;
-// }
 
 Eigen::Spline2d Dstar::generateSpline(const std::vector<Eigen::Vector2d>& points) {
     Eigen::MatrixXd pts(2, points.size());
@@ -612,7 +615,7 @@ Eigen::Spline2d Dstar::generateSpline(const std::vector<Eigen::Vector2d>& points
 array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
     std::lock_guard<std::mutex> lock(plansMutex);
     array<vector<Eigen::Vector2d>, 16> newPlans;
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
         for (auto &p : tmpPlans[i]) {
             newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));
         }
@@ -624,17 +627,16 @@ void Dstar::run() {
     while (running_) {
         resetMap();
         // addFieldObstacle();
-        // for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
-        for (int i = 0; i < 11; i++) {
-            if (!enemyRobots[i].active) continue;
-            addCircularObstacle(enemyRobots[i].pos.x(), enemyRobots[i].pos.y(), 360, 0);
-        }
+        // for (int i = 0; i < enemyIDs.size(); i++) {
+        //     addCircularObstacle(enemyRobots[enemyIDs[i]].pos.x(), enemyRobots[enemyIDs[i]].pos.y(), 360, 0);
+        // }
 
-        for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
-            if (!ourRobots[i].active) continue;
-            updateStart(ourRobots[i].pos.x(), ourRobots[i].pos.y());
-            updateGoal(0, 0);
-            replan(i);
+        for (int i = 0; i < ourIDs.size(); i++) {
+            if (!ourRobots[ourIDs[i]].active) continue;
+            updateGoal(-2000, 0);
+            updateStart(ourRobots[ourIDs[i]].pos.x(), ourRobots[ourIDs[i]].pos.y());
+            
+            replan(ourIDs[i]);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));

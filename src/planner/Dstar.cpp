@@ -378,14 +378,16 @@ void Dstar::updateStart(float x, float y) {
 
         // 近傍探索して空いているセルを探す
         bool found = false;
-        for (int dx = -5; dx <= 5 && !found; ++dx) {
-            for (int dy = -5; dy <= 5 && !found; ++dy) {
-                state v = u;
-                v.x += dx;
-                v.y += dy;
-                if (!occupied(v)) {
-                    u = v;
-                    found = true;
+        for (double i = 0.5; i < 5 && !found; i += 0.5) {
+            for (int dx = -i; dx <= i && !found; ++dx) {
+                for (int dy = -i; dy <= i && !found; ++dy) {
+                    state v = u;
+                    v.x += dx;
+                    v.y += dy;
+                    if (!occupied(v)) {
+                        u = v;
+                        found = true;
+                    }
                 }
             }
         }

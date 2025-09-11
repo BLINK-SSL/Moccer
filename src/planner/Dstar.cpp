@@ -25,6 +25,10 @@ Dstar::Dstar(const YAML::Node& config) : conf(config), running_(false) {
         s_start.push_back({0, 0});
         s_goal.push_back({0, 0});
         s_last.push_back({0, 0});
+
+        cellHashs[i] = ds_ch();
+        openHashs[i] = ds_oh();
+        openLists[i] = ds_pq();
     }
 }
 
@@ -619,11 +623,14 @@ void Dstar::run() {
     while (running_) {
         resetMap();
         // addFieldObstacle();
-        // for (int i = 0; i < enemyIDs.size(); i++) {
-        //     addCircularObstacle(enemyRobots[enemyIDs[i]].pos.x(), enemyRobots[enemyIDs[i]].pos.y(), 360, 0);
-        // }
+
 
         for (int i = 0; i < ourIDs.size(); i++) {
+            if (!ourRobots[ourIDs[i]].active) continue;
+            for (int j = 0; j < enemyIDs.size(); j++) {
+                if (!enemyRobots[enemyIDs[j]].active) continue;
+                addCircularObstacle(enemyRobots[enemyIDs[j]].pos.x(), enemyRobots[enemyIDs[j]].pos.y(), 360, 0, ourIDs[i]);
+            }
             updateStart(ourRobots[ourIDs[i]].pos.x(), ourRobots[ourIDs[i]].pos.y(), ourIDs[i]);
             updateGoal(ourRobots[ourIDs[i]].dest.x(), ourRobots[ourIDs[i]].dest.y(), ourIDs[i]);
             replan(ourIDs[i]);

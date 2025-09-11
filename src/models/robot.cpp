@@ -48,4 +48,23 @@ void Robot::update(SSL_DetectionRobot robot, float deltaTime) {
     prePos = pos;
     preOrientation = robot.orientation();
 
+    if (robotId == 0) {
+        dest = Eigen::Vector2d(-5500.0, 0.0);
+    } else if (robotId == 1) {
+        dest = Eigen::Vector2d(-100.0, 0.0);
+    } else if (robotId == 2) {
+        dest = Eigen::Vector2d(-3000.0, 0.0);
+    } else if (robotId == 3) {
+        dest = Eigen::Vector2d(-2000.0, 2000.0);
+    } else if (robotId == 4) {
+        dest = Eigen::Vector2d(-2000.0, -2000.0);
+    } else if (robotId == 5) {
+        dest = Eigen::Vector2d(-4000.0, -3000.0);
+    } else if (robotId == 6) {
+        dest = Eigen::Vector2d(-4000.0, 3000.0);
+    } else if (robotId == 7) {
+        dest = Eigen::Vector2d(-4000.0, 0.0);
+    } else {
+        dest = Eigen::Vector2d(-2000.0, 0.0);
+    }
 }

@@ -56,13 +56,12 @@ public:
 
     Dstar(const YAML::Node& config);
     ~Dstar();
-    void   init(float sX, float sY, float gX, float gY);
-    void   updateCell(float x, float y, double val);
-    void   updateStart(float x, float y);
-    void   updateGoal(float x, float y);
+    void   updateCell(float x, float y, double val, int id);
+    void   updateStart(float x, float y, int id);
+    void   updateGoal(float x, float y, int id);
     bool   replan(int id);
-    void   addCircularObstacle(float cx, float cy, float outerRadius, float innerRadius);
-    void   addFieldObstacle();
+    void   addCircularObstacle(float cx, float cy, float outerRadius, float innerRadius, int id);
+    void   addFieldObstacle(int id);
     void   resetMap();
     void   start();
     void   stop();
@@ -79,14 +78,17 @@ private:
     list<state> plans[16];
     list<state> tmpPlans[16];
 
-    double C1;
-    double k_m;
-    state s_start, s_goal, s_last;
+    vector<double> C1;
+    vector<double> k_ms;
+    // state s_start, s_goal, s_last;
+    vector<state> s_start;
+    vector<state> s_goal;
+    vector<state> s_last;
     int maxSteps;
 
-    ds_pq openList;
-    ds_ch cellHash;
-    ds_oh openHash;
+    vector <ds_pq> openLists = vector<ds_pq>(16);
+    vector <ds_ch> cellHashs = vector<ds_ch>(16);
+    vector <ds_oh> openHashs = vector<ds_oh>(16);
 
     float MAX_V;     
     float MAX_W;    
@@ -95,24 +97,24 @@ private:
     float GOAL_TOLERANCE;
 
     bool   close(double x, double y);
-    void   makeNewCell(state u);
-    double getG(state u);
-    double getRHS(state u);
-    void   setG(state u, double g);
-    double setRHS(state u, double rhs);
+    void   makeNewCell(state u, int id);
+    double getG(state u, int id);
+    double getRHS(state u, int id);
+    void   setG(state u, double g, int id);
+    double setRHS(state u, double rhs, int id);
     double eightCondist(state a, state b);
-    int    computeShortestPath();
-    void   updateVertex(state u);
-    void   insert(state u);
-    void   remove(state u);
+    int    computeShortestPath(int id);
+    void   updateVertex(state u, int id);
+    void   insert(state u, int id);
+    void   remove(state u, int id);
     double trueDist(state a, state b);
-    double heuristic(state a, state b);
-    state  calculateKey(state u);
-    void   getSucc(state u, list<state> &s);
-    void   getPred(state u, list<state> &s);
-    double cost(state a, state b);
-    bool   occupied(state u);
-    bool   isValid(state u);
+    double heuristic(state a, state bm, int id);
+    state  calculateKey(state u, int id);
+    void   getSucc(state u, list<state> &s, int id);
+    void   getPred(state u, list<state> &s, int id);
+    double cost(state a, state b, int id);
+    bool   occupied(state u, int id);
+    bool   isValid(state u, int id);
     float  keyHashCode(state u);
 
     float dRatio;

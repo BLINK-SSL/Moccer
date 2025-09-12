@@ -4,15 +4,15 @@ General:
 
 # Planner Configuration
 Planner:
-  dRatio: 150
+  dRatio: 100
   SafeDistance: 200.0
   Obstacle: 0.5
   Goal: 1
   Velocity: 1
   D_Star: 0
 
-  Delta: 0.02
-  PredictDelta: 0.2
+  Delta: 0.04
+  PredictDelta: 0.4
   VelocityAccuracy: 100
 
 # Network Configuration
@@ -28,5 +28,5 @@ Network:
 Robot:
   MaxVelocity: 5000
   MaxAngularVelocity: 1.0
-  MaxVelocityAcceleration: 2000
+  MaxVelocityAcceleration: 3000
   MaxAngularAcceleration: 0.5

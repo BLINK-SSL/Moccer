@@ -30,10 +30,10 @@ struct ipoint2 {
 };
 
 struct cellInfo {
-
     double g;
     double rhs;
     double cost;
+    int enemyID;
 
 };
 
@@ -57,10 +57,10 @@ public:
     Dstar(const YAML::Node& config);
     ~Dstar();
     void   updateCell(float x, float y, double val, int id);
-    void   updateStart(float x, float y, int id);
-    void   updateGoal(float x, float y, int id);
+    void   updateStart(const Robot robot);
+    void   updateGoal(const Robot robot);
     bool   replan(int id);
-    void   addCircularObstacle(float cx, float cy, float outerRadius, float innerRadius, int id);
+    void   addEnemyObstacle(const Robot enemy);
     void   addFieldObstacle(int id);
     void   resetMap();
     void   start();
@@ -87,7 +87,7 @@ private:
     int maxSteps;
 
     vector <ds_pq> openLists = vector<ds_pq>(16);
-    vector <ds_ch> cellHashs = vector<ds_ch>(16);
+    ds_ch cellHash;
     vector <ds_oh> openHashs = vector<ds_oh>(16);
 
     float MAX_V;     

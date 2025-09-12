@@ -10,7 +10,7 @@
 using namespace std::chrono;
 
 Dstar::Dstar(const YAML::Node& config) : conf(config), running_(false) {
-    maxSteps = 8000000;  // node expansions before we give up
+    maxSteps = 80000;  // node expansions before we give up
     // C1       = 1;      // cost of an unseen cell
     dRatio   = conf["Planner"]["dRatio"].as<float>();
 
@@ -26,7 +26,6 @@ Dstar::Dstar(const YAML::Node& config) : conf(config), running_(false) {
         s_goal.push_back({0, 0});
         s_last.push_back({0, 0});
 
-        cellHashs[i] = ds_ch();
         openHashs[i] = ds_oh();
         openLists[i] = ds_pq();
     }
@@ -60,27 +59,27 @@ bool Dstar::isValid(state u, int id) {
 }
 
 bool Dstar::occupied(state u, int id) {
-    ds_ch::iterator cur = cellHashs[id].find(u);
-    if (cur == cellHashs[id].end()) return false;
+    ds_ch::iterator cur = cellHash.find(u);
+    if (cur == cellHash.end()) return false;
     return (cur->second.cost < 0);
 }
 
 void Dstar::makeNewCell(state u, int id) {
 
-    if (cellHashs[id].find(u) != cellHashs[id].end()) return;
+    if (cellHash.find(u) != cellHash.end()) return;
 
     cellInfo tmp;
     tmp.g       = tmp.rhs = heuristic(u,s_goal[id], id);
     tmp.cost    = C1[id];
-    cellHashs[id][u] = tmp;
+    cellHash[u] = tmp;
 
 }
 
 double Dstar::getG(state u, int id) {
 
-    if (cellHashs[id].find(u) == cellHashs[id].end())
+    if (cellHash.find(u) == cellHash.end())
         return heuristic(u,s_goal[id], id);
-    return cellHashs[id][u].g;
+    return cellHash[u].g;
 
 }
 
@@ -88,21 +87,21 @@ double Dstar::getRHS(state u, int id) {
 
     if (u == s_goal[id]) return 0;
 
-    if (cellHashs[id].find(u) == cellHashs[id].end())
+    if (cellHash.find(u) == cellHash.end())
         return heuristic(u,s_goal[id], id);
-    return cellHashs[id][u].rhs;
+    return cellHash[u].rhs;
 
 }
 
 void Dstar::setG(state u, double g, int id) {
 
     makeNewCell(u, id);
-    cellHashs[id][u].g = g;
+    cellHash[u].g = g;
 }
 
 double Dstar::setRHS(state u, double rhs, int id) {
     makeNewCell(u, id);
-    cellHashs[id][u].rhs = rhs;
+    cellHash[u].rhs = rhs;
 }
 
 double Dstar::eightCondist(state a, state b) {
@@ -128,6 +127,13 @@ int Dstar::computeShortestPath(int id) {
     while ((!openLists[id].empty()) &&
             (openLists[id].top() < (s_start[id] = calculateKey(s_start[id], id))) ||
             (getRHS(s_start[id], id) != getG(s_start[id], id))) {
+        // std::cout << "Dstar computing" << std::endl;
+        // if (getRHS(s_start[id], id) != getG(s_start[id], id))
+        //     std::cout << "1" << std::endl;
+        // if (openLists[id].top() < (s_start[id] = calculateKey(s_start[id], id)))
+        //     std::cout << "2" << std::endl;
+        // if (!openLists[id].empty())
+        //     std::cout << "3" << std::endl;
 
         if (k++ > maxSteps) {
             fprintf(stderr, "At maxsteps\n");
@@ -260,8 +266,8 @@ double Dstar::cost(state a, state b, int id) {
 
     if (xd+yd>1) scale = M_SQRT2;
 
-    if (cellHashs[id].count(a) == 0) return scale*C1[id];
-    return scale*cellHashs[id][a].cost;
+    if (cellHash.count(a) == 0) return scale*C1[id];
+    return scale*cellHash[a].cost;
 
 }
 
@@ -276,42 +282,10 @@ void Dstar::updateCell(float x, float y, double val, int id) {
 
     makeNewCell(u, id);
 
-    cellHashs[id][u].cost = val;
+    cellHash[u].cost = val;
     updateVertex(u, id);
 }
 
-/* void Dstar::getSucc(state u,list<state> &s)
- * --------------------------
- * Returns a list of successor states for state u, since this is an
- * 8-way graph this list contains all of a cells neighbours. Unless
- * the cell is occupied in which case it has no successors.
- */
-// void Dstar::getSucc(state u,list<state> &s) {
-
-//   s.clear();
-//   u.k.first  = -1;
-//   u.k.second = -1;
-
-//   if (occupied(u)) return;
-
-//   u.x += 1;
-//   s.push_front(u);
-//   u.y += 1;
-//   s.push_front(u);
-//   u.x -= 1;
-//   s.push_front(u);
-//   u.x -= 1;
-//   s.push_front(u);
-//   u.y -= 1;
-//   s.push_front(u);
-//   u.y -= 1;
-//   s.push_front(u);
-//   u.x += 1;
-//   s.push_front(u);
-//   u.x += 1;
-//   s.push_front(u);
-
-// }
 void Dstar::getSucc(state u,list<state> &s, int id) {
     s.clear();
 
@@ -343,13 +317,7 @@ void Dstar::getSucc(state u,list<state> &s, int id) {
         }
     }
 }
-/* void Dstar::getPred(state u,list<state> &s)
- * --------------------------
- * Returns a list of all the predecessor states for state u. Since
- * this is for an 8-way connected graph the list contails all the
- * neighbours for state u. Occupied neighbours are not added to the
- * list.
- */
+
 void Dstar::getPred(state u,list<state> &s, int id) {
 
     s.clear();
@@ -375,14 +343,11 @@ void Dstar::getPred(state u,list<state> &s, int id) {
 
 }
 
-/* void Dstar::updateStart(int x, int y)
- * --------------------------
- * Update the position of the robot, this does not force a replan.
- */
-void Dstar::updateStart(float x, float y, int id) {
+void Dstar::updateStart(const Robot robot) {
+    int id = robot.robotId;
     state u;
-    u.x = x / dRatio;
-    u.y = y / dRatio;
+    u.x = robot.pos.x() / dRatio;
+    u.y = robot.pos.y() / dRatio;
 
     if (occupied(u, id)) {
         bool found = false;
@@ -408,24 +373,40 @@ void Dstar::updateStart(float x, float y, int id) {
     s_last[id] = s_start[id];
 }
 
+void Dstar::updateGoal(const Robot robot) {
+    int id = robot.robotId;
+    state u;
+    u.x = robot.dest.x() / dRatio;
+    u.y = robot.dest.y() / dRatio;
 
-/* void Dstar::updateGoal(int x, int y)
- * --------------------------
- * This is somewhat of a hack, to change the position of the goal we
- * first save all of the non-empty on the map, clear the map, move the
- * goal, and re-add all of non-empty cells. Since most of these cells
- * are not between the start and goal this does not seem to hurt
- * performance too much. Also it free's up a good deal of memory we
- * likely no longer use.
- */
-void Dstar::updateGoal(float x, float y, int id) {
+    if (occupied(u, id)) {
+        std::cout << "Goal occupied, searching for nearest free cell" << std::endl;
+        bool found = false;
+        for (double i = 0.5; i < 5 && !found; i += 0.5) {
+            for (int dx = -i; dx <= i && !found; ++dx) {
+                for (int dy = -i; dy <= i && !found; ++dy) {
+                    state v = u;
+                    v.x += dx;
+                    v.y += dy;
+                    if (!occupied(v, id)) {
+                        u = v;
+                        found = true;
+                    }
+                }
+            }
+        }
+    }
+
+    s_goal[id].x = u.x;
+    s_goal[id].y = u.y;
+
     list< pair<ipoint2, double> > toAdd;
     pair<ipoint2, double> tp;
 
     ds_ch::iterator i;
     list< pair<ipoint2, double> >::iterator kk;
 
-    for(i=cellHashs[id].begin(); i!=cellHashs[id].end(); i++) {
+    for(i=cellHash.begin(); i!=cellHash.end(); i++) {
         if (!close(i->second.cost, C1[id])) {
             tp.first.x = i->first.x;
             tp.first.y = i->first.y;
@@ -434,7 +415,7 @@ void Dstar::updateGoal(float x, float y, int id) {
         }
     }
 
-    cellHashs[id].clear();
+    cellHash.clear();
     openHashs[id].clear();
 
     while(!openLists[id].empty())
@@ -442,18 +423,18 @@ void Dstar::updateGoal(float x, float y, int id) {
 
     k_ms[id] = 0;
 
-    s_goal[id].x  = x / dRatio;
-    s_goal[id].y  = y / dRatio;
+    // s_goal[id].x  = u.x;
+    // s_goal[id].y  = u.y;
 
     cellInfo tmp;
     tmp.g = tmp.rhs =  0;
     tmp.cost = C1[id];
 
-    cellHashs[id][s_goal[id]] = tmp;
+    cellHash[s_goal[id]] = tmp;
 
     tmp.g = tmp.rhs = heuristic(s_start[id],s_goal[id], id);
     tmp.cost = C1[id];
-    cellHashs[id][s_start[id]] = tmp;
+    cellHash[s_start[id]] = tmp;
     s_start[id] = calculateKey(s_start[id], id);
 
     s_last[id] = s_start[id];
@@ -462,22 +443,12 @@ void Dstar::updateGoal(float x, float y, int id) {
         updateCell(kk->first.x, kk->first.y, kk->second, id);
     }
 }
-
-/* bool Dstar::replan()
- * --------------------------
- * Updates the costs for all cells and computes the shortest path to
- * goal. Returns true if a path is found, false otherwise. The path is
- * computed by doing a greedy search over the cost+g values in each
- * cells. In order to get around the problem of the robot taking a
- * path that is near a 45 degree angle to goal we break ties based on
- *  the metric euclidean(state, goal) + euclidean(state,start).
- */
 bool Dstar::replan(int id) {
 
     plans[id].clear();
 
     int res = computeShortestPath(id);
-    //printf("res: %d ols: %d ohs: %d tk: [%f %f] sk: [%f %f] sgr: (%f,%f)\n",res,openList.size(),openHash.size(),openList.top().k.first,openList.top().k.second, s_start.k.first, s_start.k.second,getRHS(s_start),getG(s_start));
+    
     if (res < 0) {
         fprintf(stderr, "NO PATH TO GOAL\n");
         return false;
@@ -532,28 +503,19 @@ bool Dstar::replan(int id) {
     return true;
 }
 
-void Dstar::addCircularObstacle(float cx, float cy, float outerRadius, float innerRadius, int id) {
-    // for (int x = cx - outerRadius; x <= cx + outerRadius; ++x) {
-    //     for (int y = cy - outerRadius; y <= cy + outerRadius; ++y) {
-    //         int dx = abs(x - cx);
-    //         int dy = abs(y - cy);
-    //         int manhattanDist = dx + dy;
-    //         if (manhattanDist <= outerRadius && manhattanDist >= innerRadius) {
-    //             updateCell(x, y, -1);
-    //         }
-    //     }
-    // }
-    cx /= dRatio;
-    cy /= dRatio;
-    outerRadius /= dRatio;
-    innerRadius /= dRatio;
+void Dstar::addEnemyObstacle(const Robot enemy) {
+    float cx = enemy.pos.x() / dRatio;
+    float cy = enemy.pos.y() / dRatio;
+    float outerRadius = 360 / dRatio;
+    float innerRadius = 0 / dRatio;
+
     for (int x = cx - outerRadius; x <= cx + outerRadius; ++x) {
         for (int y = cy - outerRadius; y <= cy + outerRadius; ++y) {
             int dx = x - cx;
             int dy = y - cy;
             int distSq = dx * dx + dy * dy;
             if (distSq <= outerRadius * outerRadius && distSq >= innerRadius * innerRadius) {
-                updateCell(x, y, -1, id);
+                updateCell(x, y, -1, enemy.robotId);
             }
         }
     }
@@ -572,8 +534,8 @@ void Dstar::addFieldObstacle(int id) {
 
 void Dstar::resetMap()
 {
+    cellHash.clear();
     for (int i = 0; i < ourIDs.size(); ++i) {
-        cellHashs[ourIDs[i]].clear();
         openHashs[ourIDs[i]].clear();
         while(!openLists[ourIDs[i]].empty()) openLists[ourIDs[i]].pop();
         plans[ourIDs[i]].clear();
@@ -621,21 +583,19 @@ array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
 
 void Dstar::run() {
     while (running_) {
+        // std::cout << "Dstar running" << std::endl;
         resetMap();
         // addFieldObstacle();
-
-
+        for (int j = 0; j < enemyIDs.size(); j++) {
+            if (!enemyRobots[enemyIDs[j]].active) continue;
+            addEnemyObstacle(enemyRobots[enemyIDs[j]]);
+        }
         for (int i = 0; i < ourIDs.size(); i++) {
             if (!ourRobots[ourIDs[i]].active) continue;
-            for (int j = 0; j < enemyIDs.size(); j++) {
-                if (!enemyRobots[enemyIDs[j]].active) continue;
-                addCircularObstacle(enemyRobots[enemyIDs[j]].pos.x(), enemyRobots[enemyIDs[j]].pos.y(), 360, 0, ourIDs[i]);
-            }
-            updateStart(ourRobots[ourIDs[i]].pos.x(), ourRobots[ourIDs[i]].pos.y(), ourIDs[i]);
-            updateGoal(ourRobots[ourIDs[i]].dest.x(), ourRobots[ourIDs[i]].dest.y(), ourIDs[i]);
+            updateStart(ourRobots[ourIDs[i]]);
+            updateGoal(ourRobots[ourIDs[i]]);
             replan(ourIDs[i]);
         }
-
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }   

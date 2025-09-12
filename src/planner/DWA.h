@@ -4,8 +4,6 @@
 #include <cmath>
 #include <cstring>
 #include <algorithm>
-#include <thread>
-#include <atomic>
 #include <yaml-cpp/yaml.h>
 
 #include "../models/state.h"
@@ -13,8 +11,6 @@
 #include "../models/cmd.h"
 
 using namespace std;
-
-#define INT_MAX 1000000
 
 class Bot_Model {
 public:
@@ -43,10 +39,6 @@ class DWA {
 public:
     DWA(const YAML::Node& config);
     ~DWA();
-
-    void update(Robot* ourRobots, Robot* enemyRobots, array<vector<Eigen::Vector2d>, 16>& dstarPlans);
-    void start();
-    void stop();
 
     bool Get_Trajectory(Robot bot, double Velocity, vector<Eigen::Vector2d> dstarPlan);
     double Get_Dist_To_Obstacle();
@@ -105,28 +97,24 @@ public:
         MAX_Dist_To_D_Star = -10;
     }
 
-    void run();
-    void trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot);
+    RobotCmd run(Robot* ourRobots, Robot* enemyRobots, int id, vector<Eigen::Vector2d> dstarPlan);
+    RobotCmd trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot);
 
-    RobotCmd* getDwa();
+    RobotCmd getDwa();
 
 private:
-    std::mutex dwaMutex;
     const YAML::Node& conf;
 
     vector<Eigen::Vector2d> Obstacle_Set;
     vector<Node> Ok_List;
     vector<Eigen::Vector2d> Trajectory;
 
-    std::thread dwaThread_;
-    std::atomic<bool> running_;
     float dRatio;
 
     int maxRobotCount;
     Robot ourRobots[16];
     Robot enemyRobots[16];
-    RobotCmd robotCmds[16];
-    array<vector<Eigen::Vector2d>, 16> dstarPlans;
+    vector<Eigen::Vector2d> dstarPlans;
 
     double MIN_Dist_To_Obstacle;
     double MAX_Dist_To_Obstacle;

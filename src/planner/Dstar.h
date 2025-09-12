@@ -56,7 +56,7 @@ public:
 
     Dstar(const YAML::Node& config);
     ~Dstar();
-    void   updateCell(float x, float y, double val, int id);
+    void   updateCell(float x, float y, double val);
     void   updateStart(const Robot robot);
     void   updateGoal(const Robot robot);
     bool   replan(int id);
@@ -65,30 +65,25 @@ public:
     void   resetMap();
     void   start();
     void   stop();
-    void   update(Robot* ourRobots, Robot* enemyRobots);
-    void   run();
 
-    array<vector<Eigen::Vector2d>, 16> getPlans();
+    vector<Eigen::Vector2d>   run(Robot* ourRobots, Robot* enemyRobots, int id);
+
     Eigen::Spline2d generateSpline(const std::vector<Eigen::Vector2d>& points);
 
 private:
 
     const YAML::Node& conf;
 
-    list<state> plans[16];
-    list<state> tmpPlans[16];
+    vector<state> plans;
 
-    vector<double> C1;
-    vector<double> k_ms;
-    // state s_start, s_goal, s_last;
-    vector<state> s_start;
-    vector<state> s_goal;
-    vector<state> s_last;
+    double C1;
+    double k_m;
+    state s_start, s_goal, s_last;
     int maxSteps;
 
-    vector <ds_pq> openLists = vector<ds_pq>(16);
+    ds_pq openList;
     ds_ch cellHash;
-    vector <ds_oh> openHashs = vector<ds_oh>(16);
+    ds_oh openHash;
 
     float MAX_V;     
     float MAX_W;    
@@ -97,33 +92,29 @@ private:
     float GOAL_TOLERANCE;
 
     bool   close(double x, double y);
-    void   makeNewCell(state u, int id);
-    double getG(state u, int id);
-    double getRHS(state u, int id);
-    void   setG(state u, double g, int id);
-    double setRHS(state u, double rhs, int id);
+    void   makeNewCell(state u);
+    double getG(state u);
+    double getRHS(state u);
+    void   setG(state u, double g);
+    double setRHS(state u, double rhs);
     double eightCondist(state a, state b);
     int    computeShortestPath(int id);
-    void   updateVertex(state u, int id);
-    void   insert(state u, int id);
-    void   remove(state u, int id);
+    void   updateVertex(state u);
+    void   insert(state u);
+    void   remove(state u);
     double trueDist(state a, state b);
-    double heuristic(state a, state bm, int id);
-    state  calculateKey(state u, int id);
-    void   getSucc(state u, list<state> &s, int id);
-    void   getPred(state u, list<state> &s, int id);
-    double cost(state a, state b, int id);
-    bool   occupied(state u, int id);
-    bool   isValid(state u, int id);
+    double heuristic(state a, state bm);
+    state  calculateKey(state u);
+    void   getSucc(state u, list<state> &s);
+    void   getPred(state u, list<state> &s);
+    double cost(state a, state b);
+    bool   occupied(state u);
+    bool   isValid(state u);
     float  keyHashCode(state u);
 
     float dRatio;
 
     std::chrono::high_resolution_clock::time_point beforeTime;
-
-    bool running_;
-    std::thread dstarThread_;
-    std::mutex plansMutex;
 
     Robot ourRobots[16];
     Robot enemyRobots[16];

@@ -1,13 +1,11 @@
-#ifndef OBSERVER_H
-#define OBSERVER_H
+#pragma once
 
 #include <iostream>
 #include <yaml-cpp/yaml.h>
 
 #include "networks/sender.h"
 #include "networks/receiver.h"
-#include "planner/Dstar.h"
-#include "planner/DWA.h"
+#include "planner/planner.h"
 
 class Observer {
     public:
@@ -22,14 +20,10 @@ class Observer {
 
         Sender sender;
         Receiver receiver;
-        Dstar dstar;
-        DWA dwa;
+        std::vector<std::unique_ptr<Planner>> planners;
 
         Robot* ourRobots;
         Robot* enemyRobots;
 
-        array<vector<Eigen::Vector2d>,16> dstarPlans;
-        RobotCmd* dwaPlans;
+        int maxRobotCount;
 };
-
-#endif // OBSERVER_H

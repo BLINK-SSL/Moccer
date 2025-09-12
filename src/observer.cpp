@@ -1,15 +1,21 @@
 #include "observer.h"
 
-Observer::Observer(const YAML::Node& config) : conf(config), sender(config), receiver(config), dstar(config), dwa(config) {
+Observer::Observer(const YAML::Node& config) : conf(config), sender(config), receiver(config){
     receiver.start();
-    dstar.start();
-    dwa.start();
+    maxRobotCount = conf["General"]["MaxRobotCount"].as<int>();
+    planners.reserve(maxRobotCount);
+    for (int i = 0; i < maxRobotCount; ++i) {
+        planners.push_back(std::make_unique<Planner>(conf, i));
+        planners[i]->start();
+    }
+
 }
 
 Observer::~Observer() {
     receiver.stop();
-    dstar.stop();
-    dwa.stop();
+    for (int i = 0; i < planners.size(); ++i) {
+        planners[i]->stop();
+    }
 }
 
 void Observer::waitForReceiver() {
@@ -24,11 +30,10 @@ void Observer::update() {
     ourRobots = receiver.getOurRobots();
     enemyRobots = receiver.getEnemyRobots();
 
-    dstar.update(ourRobots, enemyRobots);
-    dstarPlans = dstar.getPlans();
-
-    dwa.update(ourRobots, enemyRobots, dstarPlans);
-    dwaPlans = dwa.getDwa();
-
-    sender.send(false, dwaPlans);
+    RobotCmd cmds[maxRobotCount];
+    for (int i = 0; i < maxRobotCount; ++i) {
+        planners[i]->update(ourRobots, enemyRobots);
+        cmds[i] = planners[i]->getCmd();
+    }
+    sender.send(false, cmds);
 }

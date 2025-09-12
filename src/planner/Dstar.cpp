@@ -9,98 +9,74 @@
 #include <chrono>
 using namespace std::chrono;
 
-Dstar::Dstar(const YAML::Node& config) : conf(config), running_(false) {
+Dstar::Dstar(const YAML::Node& config) : conf(config) {
     maxSteps = 80000;  // node expansions before we give up
-    // C1       = 1;      // cost of an unseen cell
+    C1       = 1;      // cost of an unseen cell
     dRatio   = conf["Planner"]["dRatio"].as<float>();
 
     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
-        plans[i] = list<state>();
-        plans[i].push_back({0, 0});
-
         ourIDs.push_back(i);
         enemyIDs.push_back(i);
-        C1.push_back(1);
-        k_ms.push_back(1.0/dRatio);
-        s_start.push_back({0, 0});
-        s_goal.push_back({0, 0});
-        s_last.push_back({0, 0});
-
-        openHashs[i] = ds_oh();
-        openLists[i] = ds_pq();
     }
 }
 
 Dstar::~Dstar() {
-    stop();
-}
-
-void Dstar::start() {
-    running_ = true;  
-    dstarThread_ = std::thread(&Dstar::run, this);
-}
-
-void Dstar::stop() {
-    running_ = false;
-    if (dstarThread_.joinable()) {
-        dstarThread_.join();
-    }
 }
 
 float Dstar::keyHashCode(state u) {
     return (float)(u.k.first + 1193*u.k.second);
 }
 
-bool Dstar::isValid(state u, int id) {
-    ds_oh::iterator cur = openHashs[id].find(u);
-    if (cur == openHashs[id].end()) return false;
+bool Dstar::isValid(state u) {
+    ds_oh::iterator cur = openHash.find(u);
+    if (cur == openHash.end()) return false;
     if (!close(keyHashCode(u), cur->second)) return false;
     return true;
 }
 
-bool Dstar::occupied(state u, int id) {
+bool Dstar::occupied(state u) {
     ds_ch::iterator cur = cellHash.find(u);
     if (cur == cellHash.end()) return false;
     return (cur->second.cost < 0);
 }
 
-void Dstar::makeNewCell(state u, int id) {
+void Dstar::makeNewCell(state u) {
 
     if (cellHash.find(u) != cellHash.end()) return;
 
     cellInfo tmp;
-    tmp.g       = tmp.rhs = heuristic(u,s_goal[id], id);
-    tmp.cost    = C1[id];
+    tmp.g       = tmp.rhs = heuristic(u,s_goal);
+    tmp.cost    = C1;
     cellHash[u] = tmp;
 
 }
 
-double Dstar::getG(state u, int id) {
+double Dstar::getG(state u) {
 
     if (cellHash.find(u) == cellHash.end())
-        return heuristic(u,s_goal[id], id);
+        return heuristic(u,s_goal);
     return cellHash[u].g;
 
 }
 
-double Dstar::getRHS(state u, int id) {
+double Dstar::getRHS(state u) {
 
-    if (u == s_goal[id]) return 0;
+    if (u == s_goal) return 0;
 
     if (cellHash.find(u) == cellHash.end())
-        return heuristic(u,s_goal[id], id);
+        return heuristic(u,s_goal);
     return cellHash[u].rhs;
 
 }
 
-void Dstar::setG(state u, double g, int id) {
+void Dstar::setG(state u, double g) {
 
-    makeNewCell(u, id);
+    makeNewCell(u);
     cellHash[u].g = g;
 }
 
-double Dstar::setRHS(state u, double rhs, int id) {
-    makeNewCell(u, id);
+double Dstar::setRHS(state u, double rhs) {
+    makeNewCell(u);
     cellHash[u].rhs = rhs;
 }
 
@@ -121,18 +97,18 @@ int Dstar::computeShortestPath(int id) {
     list<state> s;
     list<state>::iterator i;
 
-    if (openLists[id].empty()) return 1;
+    if (openList.empty()) return 1;
 
     int k=0;
-    while ((!openLists[id].empty()) &&
-            (openLists[id].top() < (s_start[id] = calculateKey(s_start[id], id))) ||
-            (getRHS(s_start[id], id) != getG(s_start[id], id))) {
+    while ((!openList.empty()) &&
+            (openList.top() < (s_start = calculateKey(s_start))) ||
+            (getRHS(s_start) != getG(s_start))) {
         // std::cout << "Dstar computing" << std::endl;
-        // if (getRHS(s_start[id], id) != getG(s_start[id], id))
+        // if (getRHS(s_start) != getG(s_start))
         //     std::cout << "1" << std::endl;
-        // if (openLists[id].top() < (s_start[id] = calculateKey(s_start[id], id)))
+        // if (openList.top() < (s_start = calculateKey(s_start)))
         //     std::cout << "2" << std::endl;
-        // if (!openLists[id].empty())
+        // if (!openList.empty())
         //     std::cout << "3" << std::endl;
 
         if (k++ > maxSteps) {
@@ -143,39 +119,39 @@ int Dstar::computeShortestPath(int id) {
 
         state u;
 
-        bool test = (getRHS(s_start[id], id) != getG(s_start[id], id));
+        bool test = (getRHS(s_start) != getG(s_start));
 
         // lazy remove
         while(1) {
-            if (openLists[id].empty()) return 1;
-            u = openLists[id].top();
-            openLists[id].pop();
+            if (openList.empty()) return 1;
+            u = openList.top();
+            openList.pop();
 
-            if (!isValid(u, id)) continue;
-            if (!(u < s_start[id]) && (!test)) return 2;
+            if (!isValid(u)) continue;
+            if (!(u < s_start) && (!test)) return 2;
             break;
         }
 
-        ds_oh::iterator cur = openHashs[id].find(u);
-        openHashs[id].erase(cur);
+        ds_oh::iterator cur = openHash.find(u);
+        openHash.erase(cur);
 
         state k_old = u;
 
-        if (k_old < calculateKey(u, id)) { // u is out of date
-            insert(u, id);
-        } else if (getG(u, id) > getRHS(u, id)) { // needs update (got better)
-            setG(u,getRHS(u, id), id);
-            getPred(u,s, id);
+        if (k_old < calculateKey(u)) { // u is out of date
+            insert(u);
+        } else if (getG(u) > getRHS(u)) { // needs update (got better)
+            setG(u,getRHS(u));
+            getPred(u,s);
             for (i=s.begin();i != s.end(); i++) {
-                updateVertex(*i, id);
+                updateVertex(*i);
             }
         } else {   // g <= rhs, state has got worse
-            setG(u,INFINITY, id);
-            getPred(u,s, id);
+            setG(u,INFINITY);
+            getPred(u,s);
             for (i=s.begin();i != s.end(); i++) {
-                updateVertex(*i, id);
+                updateVertex(*i);
             }
-            updateVertex(u, id);
+            updateVertex(u);
         }
     }
     return 0;
@@ -188,34 +164,34 @@ bool Dstar::close(double x, double y) {
 
 }
 
-void Dstar::updateVertex(state u, int id) {
+void Dstar::updateVertex(state u) {
 
     list<state> s;
     list<state>::iterator i;
 
-    if (u != s_goal[id]) {
-        getSucc(u,s, id);
+    if (u != s_goal) {
+        getSucc(u,s);
         double tmp = INFINITY;
         double tmp2;
 
         for (i=s.begin();i != s.end(); i++) {
-            tmp2 = getG(*i, id) + cost(u,*i, id);
+            tmp2 = getG(*i) + cost(u,*i);
             if (tmp2 < tmp) tmp = tmp2;
         }
-        if (!close(getRHS(u, id),tmp)) setRHS(u,tmp, id);
+        if (!close(getRHS(u),tmp)) setRHS(u,tmp);
     }
 
-    if (!close(getG(u, id),getRHS(u, id))) insert(u, id);
+    if (!close(getG(u),getRHS(u))) insert(u);
 
 }
 
-void Dstar::insert(state u, int id) {
+void Dstar::insert(state u) {
 
     ds_oh::iterator cur;
     float csum;
 
-    u    = calculateKey(u, id);
-    cur  = openHashs[id].find(u);
+    u    = calculateKey(u);
+    cur  = openHash.find(u);
     csum = keyHashCode(u);
     // return if cell is already in list. TODO: this should be
     // uncommented except it introduces a bug, I suspect that there is a
@@ -223,15 +199,15 @@ void Dstar::insert(state u, int id) {
     // hides the problem...
     //if ((cur != openHash.end()) && (close(csum,cur->second))) return;
 
-    openHashs[id][u] = csum;
-    openLists[id].push(u);
+    openHash[u] = csum;
+    openList.push(u);
 }
 
-void Dstar::remove(state u, int id) {
+void Dstar::remove(state u) {
 
-    ds_oh::iterator cur = openHashs[id].find(u);
-    if (cur == openHashs[id].end()) return;
-    openHashs[id].erase(cur);
+    ds_oh::iterator cur = openHash.find(u);
+    if (cur == openHash.end()) return;
+    openHash.erase(cur);
 }
 
 
@@ -243,22 +219,22 @@ double Dstar::trueDist(state a, state b) {
 
 }
 
-double Dstar::heuristic(state a, state b, int id) {
-    return eightCondist(a,b)*C1[id];
+double Dstar::heuristic(state a, state b) {
+    return eightCondist(a,b)*C1;
 }
 
-state Dstar::calculateKey(state u, int id) {
+state Dstar::calculateKey(state u) {
 
-    double val = fmin(getRHS(u, id),getG(u, id));
+    double val = fmin(getRHS(u),getG(u));
 
-    u.k.first  = val + heuristic(u,s_start[id], id) + k_ms[id];
+    u.k.first  = val + heuristic(u,s_start) + k_m;
     u.k.second = val;
 
     return u;
 
 }
 
-double Dstar::cost(state a, state b, int id) {
+double Dstar::cost(state a, state b) {
 
     int xd = fabs(a.x-b.x);
     int yd = fabs(a.y-b.y);
@@ -266,27 +242,27 @@ double Dstar::cost(state a, state b, int id) {
 
     if (xd+yd>1) scale = M_SQRT2;
 
-    if (cellHash.count(a) == 0) return scale*C1[id];
+    if (cellHash.count(a) == 0) return scale*C1;
     return scale*cellHash[a].cost;
 
 }
 
-void Dstar::updateCell(float x, float y, double val, int id) {
+void Dstar::updateCell(float x, float y, double val) {
 
     state u;
 
     u.x = x;
     u.y = y;
 
-    if ((u == s_start[id]) || (u == s_goal[id])) return;
+    if ((u == s_start) || (u == s_goal)) return;
 
-    makeNewCell(u, id);
+    makeNewCell(u);
 
     cellHash[u].cost = val;
-    updateVertex(u, id);
+    updateVertex(u);
 }
 
-void Dstar::getSucc(state u,list<state> &s, int id) {
+void Dstar::getSucc(state u,list<state> &s) {
     s.clear();
 
     const int dx4[4] = { 1, 0, -1, 0 };
@@ -295,7 +271,7 @@ void Dstar::getSucc(state u,list<state> &s, int id) {
         state v = u;
         v.x += dx4[i];
         v.y += dy4[i];
-        if (!occupied(v, id)) s.push_back(v);
+        if (!occupied(v)) s.push_back(v);
     }
 
     const int dx8[4] = {  1, -1, -1, 1 };
@@ -312,34 +288,34 @@ void Dstar::getSucc(state u,list<state> &s, int id) {
         side2.x += 0;
         side2.y += dy8[i];
 
-        if (!occupied(v, id) && !occupied(side1, id) && !occupied(side2, id)) {
+        if (!occupied(v) && !occupied(side1) && !occupied(side2)) {
             s.push_back(v);
         }
     }
 }
 
-void Dstar::getPred(state u,list<state> &s, int id) {
+void Dstar::getPred(state u,list<state> &s) {
 
     s.clear();
     u.k.first  = -1;
     u.k.second = -1;
 
     u.x += 1;
-    if (!occupied(u, id)) s.push_front(u);
+    if (!occupied(u)) s.push_front(u);
     u.y += 1;
-    if (!occupied(u, id)) s.push_front(u);
+    if (!occupied(u)) s.push_front(u);
     u.x -= 1;
-    if (!occupied(u, id)) s.push_front(u);
+    if (!occupied(u)) s.push_front(u);
     u.x -= 1;
-    if (!occupied(u, id)) s.push_front(u);
+    if (!occupied(u)) s.push_front(u);
     u.y -= 1;
-    if (!occupied(u, id)) s.push_front(u);
+    if (!occupied(u)) s.push_front(u);
     u.y -= 1;
-    if (!occupied(u, id)) s.push_front(u);
+    if (!occupied(u)) s.push_front(u);
     u.x += 1;
-    if (!occupied(u, id)) s.push_front(u);
+    if (!occupied(u)) s.push_front(u);
     u.x += 1;
-    if (!occupied(u, id)) s.push_front(u);
+    if (!occupied(u)) s.push_front(u);
 
 }
 
@@ -349,7 +325,7 @@ void Dstar::updateStart(const Robot robot) {
     u.x = robot.pos.x() / dRatio;
     u.y = robot.pos.y() / dRatio;
 
-    if (occupied(u, id)) {
+    if (occupied(u)) {
         bool found = false;
         for (double i = 0.5; i < 5 && !found; i += 0.5) {
             for (int dx = -i; dx <= i && !found; ++dx) {
@@ -357,7 +333,7 @@ void Dstar::updateStart(const Robot robot) {
                     state v = u;
                     v.x += dx;
                     v.y += dy;
-                    if (!occupied(v, id)) {
+                    if (!occupied(v)) {
                         u = v;
                         found = true;
                     }
@@ -366,11 +342,11 @@ void Dstar::updateStart(const Robot robot) {
         }
     }
 
-    s_start[id].x = u.x;
-    s_start[id].y = u.y;
-    k_ms[id] += heuristic(s_last[id], s_start[id], id);
-    s_start[id] = calculateKey(s_start[id], id);
-    s_last[id] = s_start[id];
+    s_start.x = u.x;
+    s_start.y = u.y;
+    k_m += heuristic(s_last, s_start);
+    s_start = calculateKey(s_start);
+    s_last = s_start;
 }
 
 void Dstar::updateGoal(const Robot robot) {
@@ -379,7 +355,7 @@ void Dstar::updateGoal(const Robot robot) {
     u.x = robot.dest.x() / dRatio;
     u.y = robot.dest.y() / dRatio;
 
-    if (occupied(u, id)) {
+    if (occupied(u)) {
         std::cout << "Goal occupied, searching for nearest free cell" << std::endl;
         bool found = false;
         for (double i = 0.5; i < 5 && !found; i += 0.5) {
@@ -388,7 +364,7 @@ void Dstar::updateGoal(const Robot robot) {
                     state v = u;
                     v.x += dx;
                     v.y += dy;
-                    if (!occupied(v, id)) {
+                    if (!occupied(v)) {
                         u = v;
                         found = true;
                     }
@@ -397,8 +373,8 @@ void Dstar::updateGoal(const Robot robot) {
         }
     }
 
-    s_goal[id].x = u.x;
-    s_goal[id].y = u.y;
+    s_goal.x = u.x;
+    s_goal.y = u.y;
 
     list< pair<ipoint2, double> > toAdd;
     pair<ipoint2, double> tp;
@@ -407,7 +383,7 @@ void Dstar::updateGoal(const Robot robot) {
     list< pair<ipoint2, double> >::iterator kk;
 
     for(i=cellHash.begin(); i!=cellHash.end(); i++) {
-        if (!close(i->second.cost, C1[id])) {
+        if (!close(i->second.cost, C1)) {
             tp.first.x = i->first.x;
             tp.first.y = i->first.y;
             tp.second = i->second.cost;
@@ -416,36 +392,36 @@ void Dstar::updateGoal(const Robot robot) {
     }
 
     cellHash.clear();
-    openHashs[id].clear();
+    openHash.clear();
 
-    while(!openLists[id].empty())
-        openLists[id].pop();
+    while(!openList.empty())
+        openList.pop();
 
-    k_ms[id] = 0;
+    k_m = 0;
 
-    // s_goal[id].x  = u.x;
-    // s_goal[id].y  = u.y;
+    // s_goal.x  = u.x;
+    // s_goal.y  = u.y;
 
     cellInfo tmp;
     tmp.g = tmp.rhs =  0;
-    tmp.cost = C1[id];
+    tmp.cost = C1;
 
-    cellHash[s_goal[id]] = tmp;
+    cellHash[s_goal] = tmp;
 
-    tmp.g = tmp.rhs = heuristic(s_start[id],s_goal[id], id);
-    tmp.cost = C1[id];
-    cellHash[s_start[id]] = tmp;
-    s_start[id] = calculateKey(s_start[id], id);
+    tmp.g = tmp.rhs = heuristic(s_start,s_goal);
+    tmp.cost = C1;
+    cellHash[s_start] = tmp;
+    s_start = calculateKey(s_start);
 
-    s_last[id] = s_start[id];
+    s_last = s_start;
 
     for (kk=toAdd.begin(); kk != toAdd.end(); kk++) {
-        updateCell(kk->first.x, kk->first.y, kk->second, id);
+        updateCell(kk->first.x, kk->first.y, kk->second);
     }
 }
 bool Dstar::replan(int id) {
 
-    plans[id].clear();
+    plans.clear();
 
     int res = computeShortestPath(id);
     
@@ -456,16 +432,16 @@ bool Dstar::replan(int id) {
     list<state> n;
     list<state>::iterator i;
 
-    state cur = s_start[id];
+    state cur = s_start;
 
-    if (isinf(getG(s_start[id], id))) {
+    if (isinf(getG(s_start))) {
         fprintf(stderr, "NO PATH TO GOAL\n");
         return false;
     }
 
-    while(cur != s_goal[id]) {
-        plans[id].push_back(cur);
-        getSucc(cur, n, id);
+    while(cur != s_goal) {
+        plans.push_back(cur);
+        getSucc(cur, n);
 
         if (n.empty()) {
             fprintf(stderr, "NO PATH TO GOAL\n");
@@ -477,9 +453,9 @@ bool Dstar::replan(int id) {
         state smin;
 
         for (i=n.begin(); i!=n.end(); i++) {
-            double val  = cost(cur,*i, id);
-            double val2 = trueDist(*i,s_goal[id]) + trueDist(s_start[id],*i); // (Euclidean) cost to goal + cost to pred
-            val += getG(*i, id);
+            double val  = cost(cur,*i);
+            double val2 = trueDist(*i,s_goal) + trueDist(s_start,*i); // (Euclidean) cost to goal + cost to pred
+            val += getG(*i);
 
             if (close(val,cmin)) {
                 if (tmin > val2) {
@@ -496,10 +472,8 @@ bool Dstar::replan(int id) {
         n.clear();
         cur = smin;
     }
-    plans[id].push_back(s_goal[id]);
+    plans.push_back(s_goal);
 
-    tmpPlans[id] = plans[id];
-    
     return true;
 }
 
@@ -515,7 +489,7 @@ void Dstar::addEnemyObstacle(const Robot enemy) {
             int dy = y - cy;
             int distSq = dx * dx + dy * dy;
             if (distSq <= outerRadius * outerRadius && distSq >= innerRadius * innerRadius) {
-                updateCell(x, y, -1, enemy.robotId);
+                updateCell(x, y, -1);
             }
         }
     }
@@ -523,41 +497,22 @@ void Dstar::addEnemyObstacle(const Robot enemy) {
 
 void Dstar::addFieldObstacle(int id) {
     for (int i = -(6700 / dRatio); i < (6700 / dRatio); i++) {
-      updateCell(i, 5200 / dRatio, -1, id);
-      updateCell(i, -5200 / dRatio, -1, id);
+      updateCell(i, 5200 / dRatio, -1);
+      updateCell(i, -5200 / dRatio, -1);
     }
     for (int i = -(5200 / dRatio); i < (5200 / dRatio); i++) {
-      updateCell(6700 / dRatio, i, -1, id);
-      updateCell(-6700 / dRatio, i, -1, id);
+      updateCell(6700 / dRatio, i, -1);
+      updateCell(-6700 / dRatio, i, -1);
     }
 }
 
 void Dstar::resetMap()
 {
     cellHash.clear();
-    for (int i = 0; i < ourIDs.size(); ++i) {
-        openHashs[ourIDs[i]].clear();
-        while(!openLists[ourIDs[i]].empty()) openLists[ourIDs[i]].pop();
-        plans[ourIDs[i]].clear();
-        k_ms[ourIDs[i]] = 0;
-    }
-}
-
-void Dstar::update(Robot* ourRobots, Robot* enemyRobots) {
-    std::lock_guard<std::mutex> lock(plansMutex);
-    ourIDs.clear();
-    enemyIDs.clear();
-    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
-        this->ourRobots[i] = ourRobots[i];
-        if (ourRobots[i].active) {
-            ourIDs.push_back(i);
-        }
-        this->enemyRobots[i] = enemyRobots[i];
-        if (enemyRobots[i].active) {
-            enemyIDs.push_back(i);
-        }
-    }
-    
+    openHash.clear();
+    while(!openList.empty()) openList.pop();
+    plans.clear();
+    k_m = 0; 
 }
 
 Eigen::Spline2d Dstar::generateSpline(const std::vector<Eigen::Vector2d>& points) {
@@ -570,32 +525,33 @@ Eigen::Spline2d Dstar::generateSpline(const std::vector<Eigen::Vector2d>& points
     return Eigen::SplineFitting<Eigen::Spline2d>::Interpolate(pts, 3, t);
 }
 
-array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
-    std::lock_guard<std::mutex> lock(plansMutex);
-    array<vector<Eigen::Vector2d>, 16> newPlans;
-    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
-        for (auto &p : tmpPlans[i]) {
-            newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));
-        }
-    }
-    return newPlans;
-}
+// array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
+//     std::lock_guard<std::mutex> lock(plansMutex);
+//     array<vector<Eigen::Vector2d>, 16> newPlans;
+//     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
+//         for (auto &p : plans[i]) {
+//             newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));
+//         }
+//     }
+//     return newPlans;
+// }
 
-void Dstar::run() {
-    while (running_) {
-        // std::cout << "Dstar running" << std::endl;
-        resetMap();
-        // addFieldObstacle();
-        for (int j = 0; j < enemyIDs.size(); j++) {
-            if (!enemyRobots[enemyIDs[j]].active) continue;
-            addEnemyObstacle(enemyRobots[enemyIDs[j]]);
-        }
-        for (int i = 0; i < ourIDs.size(); i++) {
-            if (!ourRobots[ourIDs[i]].active) continue;
-            updateStart(ourRobots[ourIDs[i]]);
-            updateGoal(ourRobots[ourIDs[i]]);
-            replan(ourIDs[i]);
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+vector<Eigen::Vector2d> Dstar::run(Robot* ourRobots, Robot* enemyRobots, int id) {
+    resetMap();
+    // // addFieldObstacle();
+    for (int j = 0; j < enemyIDs.size(); j++) {
+        if (!enemyRobots[enemyIDs[j]].active) continue;
+        addEnemyObstacle(enemyRobots[enemyIDs[j]]);
     }
-}   
+    for (int i = 0; i < ourIDs.size(); i++) {
+        if (!ourRobots[ourIDs[i]].active) continue;
+        updateStart(ourRobots[ourIDs[i]]);
+        updateGoal(ourRobots[ourIDs[i]]);
+        replan(ourIDs[i]);
+    }
+    vector<Eigen::Vector2d> result;
+    for (const auto& state : plans) {
+        result.emplace_back(state.x * dRatio, state.y * dRatio);
+    }
+    return result;
+}

@@ -1,6 +1,6 @@
 #include "DWA.h"
 
-DWA::DWA(const YAML::Node& config): conf(config), running_(false) {
+DWA::DWA(const YAML::Node& config): conf(config) {
     One_Block = 1;
 
     dRatio = conf["Planner"]["dRatio"].as<float>();
@@ -17,26 +17,9 @@ DWA::DWA(const YAML::Node& config): conf(config), running_(false) {
     Goal = conf["Planner"]["Goal"].as<float>();
     Velocity = conf["Planner"]["Velocity"].as<float>();
     D_Star = conf["Planner"]["D_Star"].as<float>();
-
-    for (int i = 0; i < maxRobotCount; ++i) {
-        robotCmds[i] = RobotCmd();
-    }
 }
 
 DWA::~DWA() {
-    stop();
-}
-
-void DWA::start() {
-    running_ = true;
-    dwaThread_ = std::thread(&DWA::run, this);
-}
-
-void DWA::stop() {
-    running_ = false;
-    if (dwaThread_.joinable()) {
-        dwaThread_.join();
-    }
 }
 
 double DWA::Get_Dist_To_Obstacle() {
@@ -83,46 +66,21 @@ bool DWA::Get_Trajectory(Robot bot, double Velocity, vector<Eigen::Vector2d> dst
     return true;
 }
 
-void DWA::update(Robot* ourRobots, Robot* enemyRobots, array<vector<Eigen::Vector2d>, 16>& dstarPlans) {
-    for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
-        this->ourRobots[i] = ourRobots[i];
-        this->enemyRobots[i] = enemyRobots[i];
-        if (!dstarPlans[i].empty()) {
-            // this->dstarPlans[i].clear();
-            this->dstarPlans[i] = dstarPlans[i];
-            // for (const auto& point : dstarPlans[i]) {
-            //     this->dstarPlans[i].push_back(Eigen::Vector2d(point.x(), point.y()));
-            // }
+RobotCmd DWA::run(Robot* ourRobots, Robot* enemyRobots, int id, vector<Eigen::Vector2d> dstarPlan) {
+    Obstacle_Set.clear();
+
+    for (int i = 0; i < 11; ++i) {
+        if (enemyRobots[i].active) {
+            Obstacle_Set.push_back({enemyRobots[i].pos.x(), enemyRobots[i].pos.y()});
         }
     }
-    
+    Refresh_Programme();
+    RobotCmd cmd = trajectory(dstarPlan, ourRobots[id]);
+    return cmd;
 }
 
-RobotCmd* DWA::getDwa() {
-    // std::lock_guard<std::mutex> lock(dwaMutex);
-    return this->robotCmds;
-}
-
-void DWA::run() {
-    while (running_) {
-        Obstacle_Set.clear();
-
-        for (int i = 0; i < 11; ++i) {
-            if (enemyRobots[i].active) {
-                Obstacle_Set.push_back({enemyRobots[i].pos.x(), enemyRobots[i].pos.y()});
-            }
-        }
-
-        for (int i = 0; i < maxRobotCount; i++) {
-            Refresh_Programme();
-            trajectory(dstarPlans[i], ourRobots[i]);
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-}
-
-void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
+RobotCmd DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
+    RobotCmd robotCmd;
     for (double Velocity = bot.velocity - predictDelta * maxVelocityAcc; Velocity <= bot.velocity + predictDelta * maxVelocityAcc; Velocity += velocityAccuracy) {
         // std::cout << Velocity << std::endl;
         if (fabs(Velocity) > maxVelocity) continue;
@@ -179,7 +137,7 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
 
         if (Now_Score > MAX_Score) {
             MAX_Score = Now_Score;
-            robotCmds[bot.robotId].id = bot.robotId;
+            robotCmd.id = bot.robotId;
 
             double botDestRad;
             botDestRad = atan2(bot.dest.y() - bot.pos.y(), bot.dest.x() - bot.pos.x());
@@ -195,7 +153,9 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
             double veltangent = cos(theta) * vx + sin(theta) * vy;
             double velnormal = -sin(theta) * vx + cos(theta) * vy;
 
-            robotCmds[bot.robotId].vel = Eigen::Vector2d(veltangent, velnormal);
+            // robotCmds[bot.robotId].vel = Eigen::Vector2d(veltangent, velnormal);
+            robotCmd.vel = Eigen::Vector2d(veltangent, velnormal);
         }
     }
- }
+    return robotCmd;
+}

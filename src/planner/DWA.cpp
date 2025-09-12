@@ -198,7 +198,4 @@ void DWA::trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot) {
             robotCmds[bot.robotId].vel = Eigen::Vector2d(veltangent, velnormal);
         }
     }
-    // std::cout << "robotPos: " << bot.pos.x() << " " << bot.pos.y() << std::endl;
-    // std::cout << "velocity: " << bot.velocity << std::endl;
-    // std::cout << "Selected velocity: " << sqrt(robotCmds[bot.robotId].vel.x() * robotCmds[bot.robotId].vel.x() + robotCmds[bot.robotId].vel.y() * robotCmds[bot.robotId].vel.y()) << std::endl;
-}
+ }

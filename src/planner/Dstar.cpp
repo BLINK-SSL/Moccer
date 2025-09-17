@@ -13,6 +13,7 @@ Dstar::Dstar(const YAML::Node& config) : conf(config) {
     maxSteps = 80000;  // node expansions before we give up
     C1       = 1;      // cost of an unseen cell
     dRatio   = conf["Planner"]["dRatio"].as<float>();
+    id = -1;
 
     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); ++i) {
         ourIDs.push_back(i);
@@ -92,64 +93,6 @@ double Dstar::eightCondist(state a, state b) {
     }
     return ((M_SQRT2-1.0)*min + max);
 }
-
-int Dstar::computeShortestPath(int id) {
-
-    list<state> s;
-    list<state>::iterator i;
-
-    if (openList.empty()) return 1;
-
-    int k=0;
-    s_start = calculateKey(s_start);
-    while ((!openList.empty()) &&
-            (openList.top() < s_start) ||
-            (getRHS(s_start) != getG(s_start))) {
-
-        if (k++ > maxSteps) {
-            fprintf(stderr, "At maxsteps\n");
-            return -1;
-        }
-        state u;
-
-        bool test = (getRHS(s_start) != getG(s_start));
-
-        // lazy remove
-        while(1) {
-            if (openList.empty()) return 1;
-            u = openList.top();
-            openList.pop();
-
-            if (!isValid(u)) continue;
-            if (!(u < s_start) && (!test)) return 2;
-            break;
-        }
-
-        ds_oh::iterator cur = openHash.find(u);
-        openHash.erase(cur);
-
-        state k_old = u;
-
-        if (k_old < calculateKey(u)) { // u is out of date
-            insert(u);
-        } else if (getG(u) > getRHS(u)) { // needs update (got better)
-            setG(u,getRHS(u));
-            getPred(u,s);
-            for (i=s.begin();i != s.end(); i++) {
-                updateVertex(*i);
-            }
-        } else {   // g <= rhs, state has got worse
-            setG(u,INFINITY);
-            getPred(u,s);
-            for (i=s.begin();i != s.end(); i++) {
-                updateVertex(*i);
-            }
-            updateVertex(u);
-        }
-    }
-    return 0;
-}
-
 
 bool Dstar::close(double x, double y) {
     if (isinf(x) && isinf(y)) return true;
@@ -345,7 +288,7 @@ void Dstar::updateGoal(const Robot robot) {
     u.y = robot.dest.y() / dRatio;
 
     if (occupied(u)) {
-        std::cout << "Goal occupied, searching for nearest free cell" << std::endl;
+        // std::cout << "Goal occupied, searching for nearest free cell" << std::endl;
         bool found = false;
         for (double i = 0.5; i < 5 && !found; i += 0.5) {
             for (int dx = -i; dx <= i && !found; ++dx) {
@@ -359,6 +302,9 @@ void Dstar::updateGoal(const Robot robot) {
                     }
                 }
             }
+        }
+        if (!found) {
+            std::cout << "No free cell found near goal!" << std::endl;
         }
     }
 
@@ -409,6 +355,63 @@ void Dstar::updateGoal(const Robot robot) {
     }
 }
 
+int Dstar::computeShortestPath(int id) {
+
+    list<state> s;
+    list<state>::iterator i;
+
+    if (openList.empty()) return 1;
+
+    int k=0;
+    s_start = calculateKey(s_start);
+    while ((!openList.empty()) &&
+            (openList.top() < s_start) ||
+            (getRHS(s_start) != getG(s_start))) {
+
+        if (k++ > maxSteps) {
+            fprintf(stderr, "At maxsteps\n");
+            return -1;
+        }
+        state u;
+
+        bool test = (getRHS(s_start) != getG(s_start));
+
+        // lazy remove
+        while(1) {
+            if (openList.empty()) return 1;
+            u = openList.top();
+            openList.pop();
+
+            if (!isValid(u)) continue;
+            if (!(u < s_start) && (!test)) return 2;
+            break;
+        }
+
+        ds_oh::iterator cur = openHash.find(u);
+        openHash.erase(cur);
+
+        state k_old = u;
+
+        if (k_old < calculateKey(u)) { // u is out of date
+            insert(u);
+        } else if (getG(u) > getRHS(u)) { // needs update (got better)
+            setG(u,getRHS(u));
+            getPred(u,s);
+            for (i=s.begin();i != s.end(); i++) {
+                updateVertex(*i);
+            }
+        } else {   // g <= rhs, state has got worse
+            setG(u,INFINITY);
+            getPred(u,s);
+            for (i=s.begin();i != s.end(); i++) {
+                updateVertex(*i);
+            }
+            updateVertex(u);
+        }
+    }
+    return 0;
+}
+
 bool Dstar::replan(int id) {
 
     plans.clear();
@@ -425,7 +428,7 @@ bool Dstar::replan(int id) {
     state cur = s_start;
 
     if (isinf(getG(s_start))) {
-        fprintf(stderr, "NO PATH TO GOAL\n");
+        fprintf(stderr, "isinf(getG(s_start))\n");
         return false;
     }
 
@@ -527,18 +530,16 @@ Eigen::Spline2d Dstar::generateSpline(const std::vector<Eigen::Vector2d>& points
 // }
 
 vector<Eigen::Vector2d> Dstar::run(Robot* ourRobots, Robot* enemyRobots, int id) {
+    this->id = id;
     resetMap();
     // // addFieldObstacle();
     for (int j = 0; j < enemyIDs.size(); j++) {
         if (!enemyRobots[enemyIDs[j]].active) continue;
         addEnemyObstacle(enemyRobots[enemyIDs[j]]);
     }
-    for (int i = 0; i < ourIDs.size(); i++) {
-        if (!ourRobots[ourIDs[i]].active) continue;
-        updateStart(ourRobots[ourIDs[i]]);
-        updateGoal(ourRobots[ourIDs[i]]);
-        replan(ourIDs[i]);
-    }
+    updateStart(ourRobots[ourIDs[id]]);
+    updateGoal(ourRobots[ourIDs[id]]);
+    replan(ourIDs[id]);
     vector<Eigen::Vector2d> result;
     for (const auto& state : plans) {
         result.emplace_back(state.x * dRatio, state.y * dRatio);

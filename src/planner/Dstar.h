@@ -121,6 +121,8 @@ private:
 
     vector<int> ourIDs;
     vector<int> enemyIDs;
+
+    int id;
 };
 
 struct RobotState {

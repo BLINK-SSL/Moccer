@@ -27,6 +27,7 @@ float Dstar::keyHashCode(state u) {
     return (float)(u.k.first + 1193*u.k.second);
 }
 
+// check if state is valid
 bool Dstar::isValid(state u) {
     ds_oh::iterator cur = openHash.find(u);
     if (cur == openHash.end()) return false;
@@ -100,23 +101,15 @@ int Dstar::computeShortestPath(int id) {
     if (openList.empty()) return 1;
 
     int k=0;
+    s_start = calculateKey(s_start);
     while ((!openList.empty()) &&
-            (openList.top() < (s_start = calculateKey(s_start))) ||
+            (openList.top() < s_start) ||
             (getRHS(s_start) != getG(s_start))) {
-        // std::cout << "Dstar computing" << std::endl;
-        // if (getRHS(s_start) != getG(s_start))
-        //     std::cout << "1" << std::endl;
-        // if (openList.top() < (s_start = calculateKey(s_start)))
-        //     std::cout << "2" << std::endl;
-        // if (!openList.empty())
-        //     std::cout << "3" << std::endl;
 
         if (k++ > maxSteps) {
             fprintf(stderr, "At maxsteps\n");
             return -1;
         }
-
-
         state u;
 
         bool test = (getRHS(s_start) != getG(s_start));
@@ -157,11 +150,10 @@ int Dstar::computeShortestPath(int id) {
     return 0;
 }
 
-bool Dstar::close(double x, double y) {
 
+bool Dstar::close(double x, double y) {
     if (isinf(x) && isinf(y)) return true;
     return (fabs(x-y) < 0.00001);
-
 }
 
 void Dstar::updateVertex(state u) {
@@ -170,12 +162,12 @@ void Dstar::updateVertex(state u) {
     list<state>::iterator i;
 
     if (u != s_goal) {
-        getSucc(u,s);
+        getSucc(u,s); // get neighboring node of u
         double tmp = INFINITY;
         double tmp2;
 
         for (i=s.begin();i != s.end(); i++) {
-            tmp2 = getG(*i) + cost(u,*i);
+            tmp2 = getG(*i) + cost(u,*i); // Cost from neighborings
             if (tmp2 < tmp) tmp = tmp2;
         }
         if (!close(getRHS(u),tmp)) setRHS(u,tmp);
@@ -186,22 +178,19 @@ void Dstar::updateVertex(state u) {
 }
 
 void Dstar::insert(state u) {
+    u = calculateKey(u);
+    float csum = keyHashCode(u);
+    ds_oh::iterator cur = openHash.find(u);
 
-    ds_oh::iterator cur;
-    float csum;
-
-    u    = calculateKey(u);
-    cur  = openHash.find(u);
-    csum = keyHashCode(u);
-    // return if cell is already in list. TODO: this should be
-    // uncommented except it introduces a bug, I suspect that there is a
-    // bug somewhere else and having duplicates in the openList queue
-    // hides the problem...
-    //if ((cur != openHash.end()) && (close(csum,cur->second))) return;
+    // if the key is already in the open list, skip it
+    if ((cur != openHash.end()) && close(csum, cur->second)) {
+        return;
+    }
 
     openHash[u] = csum;
     openList.push(u);
 }
+
 
 void Dstar::remove(state u) {
 
@@ -419,6 +408,7 @@ void Dstar::updateGoal(const Robot robot) {
         updateCell(kk->first.x, kk->first.y, kk->second);
     }
 }
+
 bool Dstar::replan(int id) {
 
     plans.clear();

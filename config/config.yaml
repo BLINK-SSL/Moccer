@@ -1,6 +1,7 @@
 General:
   Color: "blue"
   MaxRobotCount: 8
+  MaxEnemyRobotCount: 8
 
 # Planner Configuration
 Planner:

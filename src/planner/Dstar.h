@@ -58,13 +58,15 @@ public:
     ~Dstar();
     void   updateCell(float x, float y, double val);
     void   updateStart(const Robot robot);
+    state  findReachableGoal(state originalGoal);
     void   updateGoal(const Robot robot);
-    bool   replan(int id);
+    bool   replan(int id, Robot robot);
     void   addEnemyObstacle(const Robot enemy);
     void   addFieldObstacle(int id);
     void   resetMap();
     void   start();
     void   stop();
+    
 
     vector<Eigen::Vector2d>   run(Robot* ourRobots, Robot* enemyRobots, int id);
 

@@ -254,28 +254,10 @@ void Dstar::getPred(state u,list<state> &s) {
 void Dstar::updateStart(const Robot robot) {
     int id = robot.robotId;
     state u;
-    u.x = robot.pos.x() / dRatio;
-    u.y = robot.pos.y() / dRatio;
+    u.x = static_cast<int>(std::round(robot.pos.x() / dRatio));
+    u.y = static_cast<int>(std::round(robot.pos.y() / dRatio));
 
-    if (occupied(u)) {
-        bool found = false;
-        for (double i = 0.5; i < 5 && !found; i += 0.5) {
-            for (int dx = -i; dx <= i && !found; ++dx) {
-                for (int dy = -i; dy <= i && !found; ++dy) {
-                    state v = u;
-                    v.x += dx;
-                    v.y += dy;
-                    if (!occupied(v)) {
-                        u = v;
-                        found = true;
-                    }
-                }
-            }
-        }
-    }
-
-    s_start.x = u.x;
-    s_start.y = u.y;
+    s_start = u;
     k_m += heuristic(s_last, s_start);
     s_start = calculateKey(s_start);
     s_last = s_start;
@@ -284,11 +266,11 @@ void Dstar::updateStart(const Robot robot) {
 void Dstar::updateGoal(const Robot robot) {
     int id = robot.robotId;
     state u;
-    u.x = robot.dest.x() / dRatio;
-    u.y = robot.dest.y() / dRatio;
+    u.x = static_cast<int>(std::round(robot.dest.x() / dRatio));
+    u.y = static_cast<int>(std::round(robot.dest.y() / dRatio));
 
     if (occupied(u)) {
-        // std::cout << "Goal occupied, searching for nearest free cell" << std::endl;
+        std::cout << "Goal occupied, searching for nearest free cell" << std::endl;
         bool found = false;
         for (double i = 0.5; i < 5 && !found; i += 0.5) {
             for (int dx = -i; dx <= i && !found; ++dx) {
@@ -308,8 +290,7 @@ void Dstar::updateGoal(const Robot robot) {
         }
     }
 
-    s_goal.x = u.x;
-    s_goal.y = u.y;
+    s_goal = u;
 
     list< pair<ipoint2, double> > toAdd;
     pair<ipoint2, double> tp;
@@ -334,9 +315,6 @@ void Dstar::updateGoal(const Robot robot) {
 
     k_m = 0;
 
-    // s_goal.x  = u.x;
-    // s_goal.y  = u.y;
-
     cellInfo tmp;
     tmp.g = tmp.rhs =  0;
     tmp.cost = C1;
@@ -353,6 +331,7 @@ void Dstar::updateGoal(const Robot robot) {
     for (kk=toAdd.begin(); kk != toAdd.end(); kk++) {
         updateCell(kk->first.x, kk->first.y, kk->second);
     }
+
 }
 
 int Dstar::computeShortestPath(int id) {
@@ -412,7 +391,7 @@ int Dstar::computeShortestPath(int id) {
     return 0;
 }
 
-bool Dstar::replan(int id) {
+bool Dstar::replan(int id, Robot robot) {
 
     plans.clear();
 
@@ -429,50 +408,118 @@ bool Dstar::replan(int id) {
 
     if (isinf(getG(s_start))) {
         fprintf(stderr, "isinf(getG(s_start))\n");
+        bool found2 = false;
+        while (isinf(getG(s_start))) {
+            std::cout << "Start occupied, searching for nearest free cell" << std::endl;
+            updateStart(ourRobots[ourIDs[id]]);
+            int id = robot.robotId;
+            state u;
+            u.x = static_cast<int>(std::round(robot.dest.x() / dRatio));
+            u.y = static_cast<int>(std::round(robot.dest.y() / dRatio));
+
+            // if (occupied(u)) {
+                // std::cout << "Goal occupied, searching for nearest free cell" << std::endl;
+                bool found = false;
+                for (double i = 0.5; i < 20 && !found; i += 0.5) {
+                    for (int dx = -i; dx <= i && !found; ++dx) {
+                        for (int dy = -i; dy <= i && !found; ++dy) {
+                            state v = u;
+                            v.x += dx;
+                            v.y += dy;
+                            // if (!occupied(v)) {
+                            //     u = v;
+                            //     found = true;
+                            // }
+                        }
+                    }
+                }
+
+            s_goal = u;
+
+            list< pair<ipoint2, double> > toAdd;
+            pair<ipoint2, double> tp;
+
+            ds_ch::iterator i;
+            list< pair<ipoint2, double> >::iterator kk;
+
+            for(i=cellHash.begin(); i!=cellHash.end(); i++) {
+                if (!close(i->second.cost, C1)) {
+                    tp.first.x = i->first.x;
+                    tp.first.y = i->first.y;
+                    tp.second = i->second.cost;
+                    toAdd.push_back(tp);
+                }
+            }
+
+            cellHash.clear();
+            openHash.clear();
+
+            while(!openList.empty())
+                openList.pop();
+
+            k_m = 0;
+
+            cellInfo tmp;
+            tmp.g = tmp.rhs =  0;
+            tmp.cost = C1;
+
+            cellHash[s_goal] = tmp;
+
+            tmp.g = tmp.rhs = heuristic(s_start,s_goal);
+            tmp.cost = C1;
+            cellHash[s_start] = tmp;
+            s_start = calculateKey(s_start);
+
+            s_last = s_start;
+
+            for (kk=toAdd.begin(); kk != toAdd.end(); kk++) {
+                updateCell(kk->first.x, kk->first.y, kk->second);
+            }
+        }
+    }
+
+ state prev = cur;
+
+while(cur != s_goal) {
+    plans.push_back(cur);
+    getSucc(cur, n);
+
+    if (n.empty()) {
+        fprintf(stderr, "NO PATH TO GOAL\n");
         return false;
     }
 
-    while(cur != s_goal) {
-        plans.push_back(cur);
-        getSucc(cur, n);
+    double cmin = INFINITY;
+    state smin;
+    bool progress = false;
 
-        if (n.empty()) {
-            fprintf(stderr, "NO PATH TO GOAL\n");
-            return false;
+    for (auto i : n) {
+        double val = cost(cur,i) + getG(i);
+        if (val < cmin) {
+            cmin = val;
+            smin = i;
+            progress = true;
         }
-
-        double cmin = INFINITY;
-        double tmin;
-        state smin;
-
-        for (i=n.begin(); i!=n.end(); i++) {
-            double val  = cost(cur,*i);
-            double val2 = trueDist(*i,s_goal) + trueDist(s_start,*i); // (Euclidean) cost to goal + cost to pred
-            val += getG(*i);
-
-            if (close(val,cmin)) {
-                if (tmin > val2) {
-                    tmin = val2;
-                    cmin = val;
-                    smin = *i;
-                }
-            } else if (val < cmin) {
-                tmin = val2;
-                cmin = val;
-                smin = *i;
-            }
-        }
-        n.clear();
-        cur = smin;
     }
+
+    if (!progress || smin == cur || smin == prev) {
+        std::cerr << "Path blocked or loop detected!" << std::endl;
+        return false; // 無限ループ回避
+    }
+
+    prev = cur;
+    cur = smin;
+}
+
+
     plans.push_back(s_goal);
 
     return true;
 }
 
 void Dstar::addEnemyObstacle(const Robot enemy) {
-    float cx = enemy.pos.x() / dRatio;
-    float cy = enemy.pos.y() / dRatio;
+    int cx = static_cast<int>(std::round(enemy.pos.x() / dRatio));
+    int cy = static_cast<int>(std::round(enemy.pos.y() / dRatio));
     float outerRadius = 360 / dRatio;
     float innerRadius = 0 / dRatio;
 
@@ -518,17 +565,6 @@ Eigen::Spline2d Dstar::generateSpline(const std::vector<Eigen::Vector2d>& points
     return Eigen::SplineFitting<Eigen::Spline2d>::Interpolate(pts, 3, t);
 }
 
-// array<vector<Eigen::Vector2d>, 16> Dstar::getPlans() {
-//     std::lock_guard<std::mutex> lock(plansMutex);
-//     array<vector<Eigen::Vector2d>, 16> newPlans;
-//     for (int i = 0; i < conf["General"]["MaxRobotCount"].as<int>(); i++) {
-//         for (auto &p : plans[i]) {
-//             newPlans[i].push_back(Eigen::Vector2d(p.x*dRatio, p.y*dRatio));
-//         }
-//     }
-//     return newPlans;
-// }
-
 vector<Eigen::Vector2d> Dstar::run(Robot* ourRobots, Robot* enemyRobots, int id) {
     this->id = id;
     resetMap();
@@ -539,7 +575,7 @@ vector<Eigen::Vector2d> Dstar::run(Robot* ourRobots, Robot* enemyRobots, int id)
     }
     updateStart(ourRobots[ourIDs[id]]);
     updateGoal(ourRobots[ourIDs[id]]);
-    replan(ourIDs[id]);
+    replan(ourIDs[id], ourRobots[ourIDs[id]]);
     vector<Eigen::Vector2d> result;
     for (const auto& state : plans) {
         result.emplace_back(state.x * dRatio, state.y * dRatio);

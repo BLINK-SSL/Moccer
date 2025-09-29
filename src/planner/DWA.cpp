@@ -1,6 +1,6 @@
 #include "DWA.h"
 
-DWA::DWA(const YAML::Node& config): conf(config) {
+DWA::DWA(const YAML::Node& config) : conf(config) {
     One_Block = 1;
 
     dRatio = conf["Planner"]["dRatio"].as<float>();
@@ -66,7 +66,7 @@ bool DWA::Get_Trajectory(Robot bot, double Velocity, vector<Eigen::Vector2d> dst
     return true;
 }
 
-RobotCmd DWA::run(Robot* ourRobots, Robot* enemyRobots, int id, vector<Eigen::Vector2d> dstarPlan) {
+RobotCmd DWA::run(const std::vector<Robot>& ourRobots, const std::vector<Robot>& enemyRobots, int id, vector<Eigen::Vector2d> dstarPlan) {
     Obstacle_Set.clear();
 
     for (int i = 0; i < 11; ++i) {

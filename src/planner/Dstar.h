@@ -68,7 +68,7 @@ public:
     void   stop();
     
 
-    vector<Eigen::Vector2d>   run(Robot* ourRobots, Robot* enemyRobots, int id);
+    vector<Eigen::Vector2d>   run(const std::vector<Robot>& ourRobots, const std::vector<Robot>& enemyRobots, int id);
 
     Eigen::Spline2d generateSpline(const std::vector<Eigen::Vector2d>& points);
 

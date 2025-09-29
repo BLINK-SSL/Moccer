@@ -17,7 +17,7 @@ void Planner::stop() {
     }
 }
 
-void Planner::update(Robot* ourRobots, Robot* enemyRobots) {
+void Planner::update(const std::vector<Robot>& ourRobots, const std::vector<Robot>& enemyRobots) {
     std::lock_guard<std::mutex> lock(planMutex);
     running_ = true;
     this->ourRobots = ourRobots;

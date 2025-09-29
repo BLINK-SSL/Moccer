@@ -13,7 +13,7 @@ public:
     Planner(const YAML::Node& config, int id);
     ~Planner();
 
-    void update(Robot* ourRobots, Robot* enemyRobots);
+    void update(const std::vector<Robot>& ourRobots, const std::vector<Robot>& enemyRobots);
     void start();
     void stop();
     void run();
@@ -30,8 +30,8 @@ private:
     std::atomic<bool> running_;
     std::mutex planMutex;
 
-    Robot* ourRobots;
-    Robot* enemyRobots;
+    std::vector<Robot> ourRobots;
+    std::vector<Robot> enemyRobots;
 
     RobotCmd cmd;
 };

@@ -70,8 +70,8 @@ public:
 
     SSL_WrapperPacket getLatestPacket();
 
-    Robot* getOurRobots();
-    Robot* getEnemyRobots();
+    std::vector<Robot> getOurRobots();
+    std::vector<Robot> getEnemyRobots();
 
     double tCapture;
     double tSent;
@@ -95,8 +95,8 @@ private:
     std::thread recvThread_;
     std::atomic<bool> running_;
 
-    Robot ourRobot[16];
-    Robot enemyRobot[16];
+    std::vector<Robot> ourRobot;
+    std::vector<Robot> enemyRobot;
 
     FpsCounter fpsCounter;
     uint32_t preFrameNumber = 0;

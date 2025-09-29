@@ -17,8 +17,8 @@ Receiver::Receiver(const YAML::Node& config)
         boost::asio::ip::make_address(config["Network"]["Vision"]["Address"].as<std::string>())));
     
     for (int i = 0; i < 16; ++i) {
-        ourRobot[i] = Robot();
-        enemyRobot[i] = Robot();
+        ourRobot.push_back(Robot());
+        enemyRobot.push_back(Robot());
     }
     fpsCounter.start();
     isNewWorld = false;
@@ -94,12 +94,12 @@ void Receiver::receiveLoop() {
     }
 }
 
-Robot* Receiver::getOurRobots() {
+std::vector<Robot> Receiver::getOurRobots() {
     // std::lock_guard<std::mutex> lock(ourRobotMutex);
     return ourRobot;
 }
 
-Robot* Receiver::getEnemyRobots() {
+std::vector<Robot> Receiver::getEnemyRobots() {
     // std::lock_guard<std::mutex> lock(enemyRobotMutex);
     return enemyRobot;
 }

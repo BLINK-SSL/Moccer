@@ -565,7 +565,7 @@ Eigen::Spline2d Dstar::generateSpline(const std::vector<Eigen::Vector2d>& points
     return Eigen::SplineFitting<Eigen::Spline2d>::Interpolate(pts, 3, t);
 }
 
-vector<Eigen::Vector2d> Dstar::run(Robot* ourRobots, Robot* enemyRobots, int id) {
+vector<Eigen::Vector2d> Dstar::run(const std::vector<Robot>& ourRobots, const std::vector<Robot>& enemyRobots, int id) {
     this->id = id;
     resetMap();
     // // addFieldObstacle();

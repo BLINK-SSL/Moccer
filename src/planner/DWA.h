@@ -97,7 +97,7 @@ public:
         MAX_Dist_To_D_Star = -10;
     }
 
-    RobotCmd run(Robot* ourRobots, Robot* enemyRobots, int id, vector<Eigen::Vector2d> dstarPlan);
+    RobotCmd run(const std::vector<Robot>& ourRobots, const std::vector<Robot>& enemyRobots, int id, vector<Eigen::Vector2d> dstarPlan);
     RobotCmd trajectory(vector<Eigen::Vector2d> dstarPlan, Robot bot);
 
     RobotCmd getDwa();

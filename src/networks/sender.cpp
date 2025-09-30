@@ -3,7 +3,7 @@
 Sender::Sender(const YAML::Node& config) :
     ioContext_(),
     socket_(ioContext_),
-    endpoint_(boost::asio::ip::make_address(conf["Network"]["Simulation"]["Address"].as<std::string>()), conf["Network"]["Simulation"]["Port"].as<uint16_t>()),
+    endpoint_(boost::asio::ip::make_address(conf["Network"]["Simulation"]["Address"].as<string>()), conf["Network"]["Simulation"]["Port"].as<uint16_t>()),
     conf(config) 
 {
     socket_.open(boost::asio::ip::udp::v4());
@@ -36,9 +36,9 @@ void Sender::send(bool is_yellow, RobotCmd* cmds) {
     
     packet.mutable_commands()->CopyFrom(commands);
 
-    std::string serializedData;
+    string serializedData;
     if (!packet.SerializeToString(&serializedData)) {
-        std::cerr << "Failed to serialize command." << std::endl;
+        cerr << "Failed to serialize command." << endl;
         return;
     }
 

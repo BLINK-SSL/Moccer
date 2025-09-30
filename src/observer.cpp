@@ -8,7 +8,7 @@ Observer::Observer(const YAML::Node& config)
     planners.reserve(maxRobotCount);
 
     for (int i = 0; i < maxRobotCount; ++i) {
-        planners.push_back(std::make_unique<Planner>(conf, i));
+        planners.push_back(make_unique<Planner>(conf, i));
         planners[i]->start();
     }
 }

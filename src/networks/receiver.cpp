@@ -5,7 +5,7 @@
 
 Receiver::Receiver(const YAML::Node& config)
     : socket_(ioContext_),
-      endpoint_(boost::asio::ip::make_address(config["Network"]["Vision"]["Address"].as<std::string>()), config["Network"]["Vision"]["Port"].as<uint16_t>()),
+      endpoint_(boost::asio::ip::make_address(config["Network"]["Vision"]["Address"].as<string>()), config["Network"]["Vision"]["Port"].as<uint16_t>()),
       conf(config),
       running_(false) {
 
@@ -14,7 +14,7 @@ Receiver::Receiver(const YAML::Node& config)
     socket_.bind(endpoint_);
     
     socket_.set_option(boost::asio::ip::multicast::join_group(
-        boost::asio::ip::make_address(config["Network"]["Vision"]["Address"].as<std::string>())));
+        boost::asio::ip::make_address(config["Network"]["Vision"]["Address"].as<string>())));
     
     for (int i = 0; i < 16; ++i) {
         ourRobot.push_back(Robot());
@@ -30,7 +30,7 @@ Receiver::~Receiver() {
 
 void Receiver::start() {
     running_ = true;
-    recvThread_ = std::thread(&Receiver::receiveLoop, this);
+    recvThread_ = thread(&Receiver::receiveLoop, this);
 }
 
 void Receiver::stop() {
@@ -38,6 +38,7 @@ void Receiver::stop() {
     if (recvThread_.joinable()) {
         recvThread_.join();
     }
+    fpsCounter.stop();
 }
 
 void Receiver::receiveLoop() {
@@ -47,7 +48,6 @@ void Receiver::receiveLoop() {
             boost::asio::ip::udp::endpoint senderEndpoint;
             size_t len = socket_.receive_from(boost::asio::buffer(recvBuf), senderEndpoint);
             
-            char buff[2048];
             SSL_WrapperPacket packet;
             if (packet.ParseFromArray(recvBuf, static_cast<int>(len))) {
                 SSL_DetectionFrame detection = packet.detection();
@@ -60,8 +60,8 @@ void Receiver::receiveLoop() {
                 }
 
                 {
-                    std::lock_guard<std::mutex> lock(ourRobotMutex);
-                    if (conf["General"]["Color"].as<std::string>() == "blue") {
+                    lock_guard<mutex> lock(ourRobotMutex);
+                    if (conf["General"]["Color"].as<string>() == "blue") {
                         for (const auto& robot : detection.robots_blue()) {
                             ourRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
                         }
@@ -72,8 +72,8 @@ void Receiver::receiveLoop() {
                     }
                 }
                 {
-                    std::lock_guard<std::mutex> lock(enemyRobotMutex);
-                    if (conf["General"]["Color"].as<std::string>() == "blue") {
+                    lock_guard<mutex> lock(enemyRobotMutex);
+                    if (conf["General"]["Color"].as<string>() == "blue") {
                         for (const auto& robot : detection.robots_yellow()) {
                             enemyRobot[robot.robot_id()].update(robot, fpsCounter.getSecPerFrame());
                         }
@@ -84,22 +84,23 @@ void Receiver::receiveLoop() {
                     }
                 }
             } else {
-                std::cerr << "Failed to parse packet" << std::endl;
+                cerr << "Failed to parse packet" << endl;
             }
-        } catch (std::exception& e) {
-            std::cerr << "Receive error: " << e.what() << std::endl;
+        } catch (exception& e) {
+            cerr << "Receive error: " << e.what() << endl;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::milliseconds(1));
     }
 }
 
-std::vector<Robot> Receiver::getOurRobots() {
-    // std::lock_guard<std::mutex> lock(ourRobotMutex);
+vector<Robot> Receiver::getOurRobots() {
+    lock_guard<mutex> lock(ourRobotMutex);
     return ourRobot;
 }
 
-std::vector<Robot> Receiver::getEnemyRobots() {
-    // std::lock_guard<std::mutex> lock(enemyRobotMutex);
+vector<Robot> Receiver::getEnemyRobots() {
+    lock_guard<mutex> lock(enemyRobotMutex);
     return enemyRobot;
 }
+

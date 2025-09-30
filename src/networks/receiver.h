@@ -1,5 +1,3 @@
-// receiver.h
-
 #pragma once
 
 #include <iostream>
@@ -13,92 +11,172 @@
 #include "ssl_vision_wrapper.pb.h"
 #include "ssl_vision_detection.pb.h"
 
+using namespace std;
+
+/**
+ * @brief FPS counter utility class
+ * 
+ * Calculates Frames Per Second (FPS) based on the number of 
+ * received frames. Runs in a separate thread and prints FPS 
+ * to stdout every second.
+ */
 class FpsCounter {
 public:
-    FpsCounter() : frameCounter(0), startTime(std::chrono::high_resolution_clock::now()) {}
+    /**
+     * @brief Constructor
+     * Initializes secPerFrame to 1.0 to avoid undefined values.
+     */
+    FpsCounter();
 
-    void start() {
-        running_ = true;
-        fpsThread = std::thread(&FpsCounter::calculateFps, this);
-    }
+    /**
+     * @brief Start FPS measurement in a background thread.
+     */
+    void start();
 
-    void stop() {
-        running_ = false;
-        if (fpsThread.joinable()) {
-            fpsThread.join();
-        }
-    }
+    /**
+     * @brief Stop FPS measurement and join the thread.
+     */
+    void stop();
 
-    void calculateFps() {
-        while (running_) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            if (frameCounter > 0) {
-                std::lock_guard<std::mutex> lock(secPerFrameMutex);
-                secPerFrame = 1.0 / (frameCounter);
-                frameCounter = 0;
-            }
-            std::cout << "FPS: " << 1.0 / secPerFrame << std::endl;
-        }
-    }
+    /**
+     * @brief FPS calculation loop.
+     * 
+     * Runs once per second, updates secPerFrame, 
+     * and prints FPS to stdout.
+     */
+    void calculateFps();
 
-    std::mutex secPerFrameMutex;
+    /**
+     * @brief Get the time per frame in seconds.
+     * @return Seconds per frame (double).
+     */
+    double getSecPerFrame();
+
+    /// Number of frames received within the last second.
     int frameCounter;
-    double secPerFrame;
-
-    double getSecPerFrame() {
-        std::lock_guard<std::mutex> lock(secPerFrameMutex);
-        return secPerFrame;
-    }
 
 private:
-    
-    double fps;
-    std::chrono::high_resolution_clock::time_point startTime;
+    /// Seconds per frame (calculated once per second).
+    double secPerFrame;
 
-    std::thread fpsThread;
-    std::atomic<bool> running_;
+    /// Mutex to protect secPerFrame access.
+    mutex secPerFrameMutex;
+
+    /// Start time reference point.
+    chrono::high_resolution_clock::time_point startTime;
+
+    /// Worker thread for FPS calculation.
+    thread fpsThread;
+
+    /// Running flag for background thread.
+    atomic<bool> running_;
 };
 
 
+/**
+ * @brief Receiver class for SSL-Vision packets.
+ * 
+ * Opens a UDP multicast socket, receives SSL-Vision data, 
+ * updates robot states, and provides access to our and enemy robots.
+ */
 class Receiver {
 public:
+    /**
+     * @brief Construct a new Receiver object.
+     * 
+     * Sets up the UDP socket, joins the multicast group, 
+     * and prepares robot containers.
+     * 
+     * @param config YAML configuration node.
+     */
     Receiver(const YAML::Node& config);
+
+    /**
+     * @brief Destructor. Automatically calls stop().
+     */
     ~Receiver();
 
+    /**
+     * @brief Start the receiving thread.
+     */
     void start();
+
+    /**
+     * @brief Stop the receiving thread and the FPS counter.
+     */
     void stop();
 
+    /**
+     * @brief Get the latest packet (currently unused).
+     */
     SSL_WrapperPacket getLatestPacket();
 
-    std::vector<Robot> getOurRobots();
-    std::vector<Robot> getEnemyRobots();
+    /**
+     * @brief Get our team robots.
+     * @return Vector of Robot (copy).
+     */
+    vector<Robot> getOurRobots();
 
+    /**
+     * @brief Get enemy team robots.
+     * @return Vector of Robot (copy).
+     */
+    vector<Robot> getEnemyRobots();
+
+    /// Capture timestamp of the latest Vision packet.
     double tCapture;
+
+    /// Sent timestamp of the latest Vision packet.
     double tSent;
+
+    /// Capture timestamp of the previous frame.
     double tCapturePre;
+
+    /// FPS value (optional helper).
     double fps;
 
-    std::mutex ourRobotMutex;
-    std::mutex enemyRobotMutex;
-    
+    /// Mutex for protecting ourRobot vector.
+    mutex ourRobotMutex;
+
+    /// Mutex for protecting enemyRobot vector.
+    mutex enemyRobotMutex;
+
+    /// Flag indicating whether a new world update has been received.
     bool isNewWorld = false;
 
 private:
+    /**
+     * @brief Main loop for receiving Vision packets.
+     */
     void receiveLoop(); 
 
+    /// YAML configuration reference.
     const YAML::Node& conf;
 
+    /// Boost.Asio IO context.
     boost::asio::io_context ioContext_;
+
+    /// UDP socket for Vision data.
     boost::asio::ip::udp::socket socket_;
+
+    /// Endpoint for receiving packets.
     boost::asio::ip::udp::endpoint endpoint_;
 
-    std::thread recvThread_;
-    std::atomic<bool> running_;
+    /// Receiving thread.
+    thread recvThread_;
 
-    std::vector<Robot> ourRobot;
-    std::vector<Robot> enemyRobot;
+    /// Running flag for receiver loop.
+    atomic<bool> running_;
 
+    /// Our team robots (max 16).
+    vector<Robot> ourRobot;
+
+    /// Enemy team robots (max 16).
+    vector<Robot> enemyRobot;
+
+    /// FPS counter.
     FpsCounter fpsCounter;
+
+    /// Previous frame number for duplicate detection.
     uint32_t preFrameNumber = 0;
 };
-
